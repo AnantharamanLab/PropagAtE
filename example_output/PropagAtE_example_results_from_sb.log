@@ -1,0 +1,53 @@
+Command:  ../PropagAtE_run.py -sb example_sequence.sorted.bam -v VIBRANT_integrated_prophage_coordinates_example.tsv -o PropagAtE_example_results_from_sb.tsv
+
+Date:     2021-01-19
+Time:     17:22:05
+Program:  PropagAtE v1.0.0
+Run ID:   247e3f92
+
+Time (min) |  Log                                                   
+--------------------------------------------------------------------
+0.0         Generating a list of all prophage regions ...
+0.0         Number of prophage regions identified: 1
+0.0         Number of unique host regions identified: 1
+0.0         Processing alignment (.sam/.bam) file.
+0.0         Sorted .bam input identified, coverting to .sam for gap/mismatch filtering ...
+0.0         Processing gaps/mismatches ...
+0.0         0 of 10301 total aligned reads were tossed for having too many gaps/mismatches ...
+0.0         Converting processed .sam to .bam ...
+0.0         Conversion done.
+0.0         Sorting .bam file ...
+0.0         Sorting done.
+0.0         Indexing sorted .bam file ...
+0.0         Extracting coverage information from sorted .bam file ...
+0.0         Coverage extraction done.
+0.0         Number of valid reads used: 10301.
+0.0         Estimated read length to trim by: 141.
+0.0         Identifying coverages for host/prophage regions ...
+0.0         Coverage identification done.
+0.0         Performing statistical tests ...
+0.0         Statistical tests done. Analysis finished.
+
+
+Log file:               PropagAtE_example_results_from_sb.log
+Output results file:    PropagAtE_example_results_from_sb.tsv
+sam file:               example_sequence.sorted.gap-1_mm-3.sam
+bam file:               example_sequence.sorted.gap-1_mm-3.bam
+sorted bam file:        example_sequence.sorted.bam
+
+
+Number of active prophages identified: 0
+
+                                                               ##
+                                                             ##  ##
+                                                           ##      ##
+######   ##  ##     ##     #######   ######    #####       ##      ##
+##  ##   ##  ##   ##  ##   ##        ##       ##             ##  ##
+######   ######   ######   ##  ###   ######    ###             ##
+##       ##  ##   ##  ##   ##   ##   ##           ##           ##
+##       ##  ##   ##  ##   #######   ######   #####            ##
+                                                            #  ##  #
+                                                           # # ## # #
+                                                          #   #  #   #
+                                                         #            #
+

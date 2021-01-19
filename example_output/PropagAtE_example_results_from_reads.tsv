@@ -1,0 +1,2 @@
+prophage	host	active	MW_pvalue	CohenD	prophage-host_ratio	mean_difference	prophage_len	prophage_mean_cov	prophage_median_cov	prophage_sd_cov	host_len	host_mean_cov	host_median_cov	host_sd_cov
+example_sequence_fragment_2	example_sequence	no	7.190011450493741e-06	0.3904871525534668	1.2698217621112644	1.477774531764016	78861	6.954629030826391	6	4.069525846106216	162645	5.476854499062375	5	3.476047428495849
