@@ -199,7 +199,7 @@ except Exception as e:
                 sys.stderr.write("\n       Example update using conda: 'conda install -c bioconda samtools'. Exiting.\n")
                 logging.info("\nError: samtools version is incorrect. Please update and verify samtools '-a' flag is available.")
                 logging.info("\n       Alternatively use the '-x' flag to provide the location of the correct samtools executable.")
-                subprocess.run("rm " + outpath + "samtools_checkfile.txt 2> /dev/null", shell=True)
+                subprocess.run("rm " + outpath + u + "_samtools_checkfile.txt 2> /dev/null", shell=True)
                 exit(1)
 subprocess.run("rm " + outpath + u + "_samtools_checkfile.txt 2> /dev/null", shell=True)
 
