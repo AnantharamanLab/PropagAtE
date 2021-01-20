@@ -265,7 +265,7 @@ if forward != '' and fasta != '':
         base = fasta.rsplit(".",1)[0]
 
     logging.info("%s         Checking format of FASTA file, replacing spaces if necessary." % str(round((time.time() - float(start))/60,1)))
-    with open(fasta, 'r') as fasta_in, open(outpath + fasta.rsplit(".",1)[0] + ".no-spaces." + fasta.rsplit(".",1)[1], 'w') as fasta_out:
+    with open(fasta, 'r') as fasta_in, open(outpath + base + ".no-spaces.fasta", 'w') as fasta_out:
         for name,seq in SimpleFastaParser(fasta_in):
             if " " in name:
                 replace = True
@@ -273,7 +273,7 @@ if forward != '' and fasta != '':
             fasta_out.write(">" + str(name) + "\n" + str(seq) + "\n")
     if replace == True:
         logging.info('%s         Spaces identified in sequence names. Replaced with "~~".' % str(round((time.time() - float(start))/60,1)))
-        fasta = outpath + fasta.rsplit(".",1)[0] + ".no-spaces." + fasta.rsplit(".",1)[1]
+        fasta = outpath + base + ".no-spaces.fasta"
 
     if not os.path.exists(outpath + str(base)+".bowtie2.index.1.bt2"):
         logging.info("%s         Building index ..." % str(round((time.time() - float(start))/60,1)))
