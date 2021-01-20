@@ -1,0 +1,2 @@
+prophage	host	active	MW_pvalue	CohenD	prophage-host_ratio	mean_difference	prophage_len	prophage_mean_cov	prophage_median_cov	prophage_sd_cov	host_len	host_mean_cov	host_median_cov	host_sd_cov
+AE017333.1_Bacillus_licheniformis_fragment_2	AE017333.1_Bacillus_licheniformis	yes	3.322274048112921e-144	2.910372079578814	3.5664984383643445	48.33216572652883	50861	67.16411395764928	67	20.58420127503743	334873	18.831948231120453	16	11.307820523166997
