@@ -6,7 +6,7 @@
 # PropagAtE: Prophage Activity Estimator
 # Version: v1.0.0
 # Release date: January 21 2021
-
+# dev: 22
 
 # Imports
 try:
@@ -60,6 +60,7 @@ propagate.add_argument('-n', type=str, nargs=1, default = ['5'], help='number of
 propagate.add_argument('-a', type=str, nargs=1, default = ['4'], choices=["0", "1", "2", "3", "4"], help='remove outlier coverage values "a" standard deviations from the average [default=4].')
 propagate.add_argument('-e', type=str, nargs=1, default = ['0.75'], help="minimum effect size for significance by Cohen's d test [default=0.75, minimum=0.6].")
 propagate.add_argument('-c', type=str, nargs=1, default = ['1.75'], help="minimum prophage:host coverage ratio for significance [default=1.75, minimum=1.5].")
+propagate.add_argument('-y', type=str, nargs=1, default = [''], help='term to distinguish host from prophage name in genome/scaffold definition lines [default="_fragment_"].')
 propagate.add_argument('-x', type=str, nargs=1, default = [''], help="path to Samtools executable if not in PATH.")
 propagate.add_argument('-clean', action='store_true', help='use this setting to remove (if applicable) any generated SAM, unsorted BAM and Bowtie2 index files. Will retain any user input files, raw reads and sorted BAM files (default=off).')
 propagate.add_argument('-all', action='store_true', help='use this setting to keep all aligned reads (ignore -g and -m, default=off).')
@@ -84,10 +85,19 @@ subs = int(args.n[0])
 outliers = int(args.a[0])
 effect = float(args.e[0])
 ratio_cutoff = float(args.c[0])
+termsplit = str(args.y[0])
 outfile = str(args.o[0])
+outpath = str(os.path.dirname(os.path.abspath(outfile))) + "/"
+try:
+    temp_out = str(outfile).rsplit("/",1)[1]
+except Exception:
+    temp_out = str(outfile)
+outfile = outpath + str(temp_out)
 sampath = str(args.x[0])
 spaces = str(args.z[0])
 replace = False
+if termsplit == '':
+    termsplit = "_fragment_"
 if spaces == '':
     spaces == '~~'
 else:
@@ -104,13 +114,17 @@ subprocess.run("rm " + logfilename + " 2> /dev/null", shell=True)
 logging.basicConfig(filename=logfilename, level=logging.INFO, format='%(message)s')
 
 # verify inputs and versions
+if termsplit[0] == " ":
+    sys.stderr.write("\nThe -y input term cannot start with a space. If you tried '-y -gene' then try '-y-gene' instead. Exiting.\n")
+    logging.info("\nThe -y input term cannot start with a space. If you tried '-y -gene' then try '-y-gene' instead. Exiting.\n")
+    exit(1)
 if outfile.rsplit(".",1)[1] == "log":
     sys.stderr.write("\nThe output file cannot end in .log, suggested is .tsv. Exiting.\n")
     logging.info("\nThe output file cannot end in .log, suggested is .tsv. Exiting.\n")
     exit(1)
 if (samfile != '' and bamfile != '') or (samfile != '' and forward != '') or (bamfile != '' and forward != '') or (samfile != '' and sortbamfile != '') or (sortbamfile != '' and bamfile != '') or (forward != '' and sortbamfile != ''):
-    sys.stderr.write("\nOnly one input file (-s, -b, -r) is required. Exiting.\n")
-    logging.info("\nOnly one input file (-s, -b, -r) is required. Exiting.\n")
+    sys.stderr.write("\nOnly one input file (-s, -sb, -b, -r) is allowed. Exiting.\n")
+    logging.info("\nOnly one input file (-s, -sb, -b, -r) is allowed. Exiting.\n")
     exit(1)
 try:
     if (forward.rsplit('.',1)[1] != 'fastq' or reverse.rsplit('.',1)[1] != 'fastq') and ('.'.join(forward.rsplit('.',2)[1:]) != 'fastq.gz' or '.'.join(reverse.rsplit('.',2)[1:]) != 'fastq.gz'):
@@ -121,8 +135,8 @@ except Exception:
     pass
 try:
     if forward != '' and reverse != '' and fasta.rsplit('.',1)[1] != 'fa' and fasta.rsplit('.',1)[1] != 'fna' and fasta.rsplit('.',1)[1] != 'fasta' and fasta.rsplit('.',1)[1] != 'fsa':
-        sys.stderr.write("\nError: Provided fasta file must have the extension .fasta, .fna or .fa. Exiting.\n")
-        logging.info("\nError: Provided fasta file must have the extension .fasta, .fna or .fa. Exiting.\n")
+        sys.stderr.write("\nError: Provided fasta file must have the extension .fasta, .fna, .fa or .fsa. Exiting.\n")
+        logging.info("\nError: Provided fasta file must have the extension .fasta, .fna, .fa or .fsa. Exiting.\n")
         exit(1)
 except Exception:
     pass
@@ -153,16 +167,16 @@ if not os.path.exists(vibe):
     logging.info("\nError: could not identify prophage coordinates file (-v). Exiting.\n")
     exit(1)
 if effect < 0.6:
-    sys.stderr.write("%s         Error: Cohen's d effect size should not be set below 0.6. Exiting.\n")
-    logging.info("%s         Error: Cohen's d effect size should not be set below 0.6. Exiting.\n")
+    sys.stderr.write("\nError: Cohen's d effect size should not be set below 0.6. Exiting.\n")
+    logging.info("\nError: Cohen's d effect size should not be set below 0.6. Exiting.\n")
     exit(1)
 if ratio_cutoff < 1.5:
-    sys.stderr.write("%s         Error: ratio cutoff should not be set below 1.5. Exiting.\n")
-    logging.info("%s         Error: ratio cutoff should not be set below 1.5. Exiting.\n")
+    sys.stderr.write("\nError: ratio cutoff should not be set below 1.5. Exiting.\n")
+    logging.info("\nError: ratio cutoff should not be set below 1.5. Exiting.\n")
     exit(1)
 if subs < 5:
-    sys.stderr.write("%s         Error: subsample number should not be set below 5. Exiting.\n")
-    logging.info("%s         Error: subsample number should not be set below 5. Exiting.\n")
+    sys.stderr.write("\nError: subsample number should not be set below 5. Exiting.\n")
+    logging.info("\nError: subsample number should not be set below 5. Exiting.\n")
     exit(1)
 try:
     subprocess.check_output("which " + sampath + "samtools", shell=True)
@@ -171,19 +185,19 @@ except Exception:
     logging.info("\nError: samtools does not appear to be installed, is not in the system's PATH or is not in the indicated path (-x). Exiting.\n")
     exit(1)
 try:
-    subprocess.check_output(sampath + "samtools depth -a placeholder.bam 2> samtools_checkfile.txt", shell=True)
+    subprocess.check_output(sampath + "samtools depth -a placeholder.bam 2> " + outpath + u + "_samtools_checkfile.txt", shell=True)
 except Exception as e:
-    with open('samtools_checkfile.txt','r') as checkfile:
+    with open(outpath + u + "_samtools_checkfile.txt",'r') as checkfile:
         for line in checkfile:
             if "depth: invalid option -- 'a'" in line:
-                sys.stderr.write("\nError: samtools version is incorrect. Please update and verify '-a' flag is available.")
+                sys.stderr.write("\nError: samtools version is incorrect. Please update and verify samtools '-a' flag is available.")
                 sys.stderr.write("\n       Alternatively use the '-x' flag to provide the location of the correct samtools executable.")
                 sys.stderr.write("\n       Example update using conda: 'conda install -c bioconda samtools'. Exiting.\n")
-                logging.info("\nError: samtools version is incorrect. Please update and verify '-a' flag is available.")
+                logging.info("\nError: samtools version is incorrect. Please update and verify samtools '-a' flag is available.")
                 logging.info("\n       Alternatively use the '-x' flag to provide the location of the correct samtools executable.")
-                subprocess.run("rm samtools_checkfile.txt 2> /dev/null", shell=True)
+                subprocess.run("rm " + outpath + "samtools_checkfile.txt 2> /dev/null", shell=True)
                 exit(1)
-subprocess.run("rm samtools_checkfile.txt 2> /dev/null", shell=True)
+subprocess.run("rm " + outpath + u + "_samtools_checkfile.txt 2> /dev/null", shell=True)
 
 if forward == '' and fasta != '':
     logging.info("Note: Reads not provided, ignoring input fasta file.\n")
@@ -213,12 +227,13 @@ def cohenD(phage_mean, phage_sd, host_mean, host_sd):
 
 
 ##### ----------------------------------------------------------------------------------------------------------------------- #####
-logging.info("Command:  %s" % ' '.join(sys.argv))
+logging.info("Command:    %s" % ' '.join(sys.argv))
+logging.info("Outfolder:  %s" % outpath)
 logging.info("")
-logging.info("Date:     %s" % str(date.today()))
-logging.info("Time:     %s" % str(datetime.datetime.now().time()).rsplit(".",1)[0])
-logging.info("Program:  PropagAtE v1.0.0")
-logging.info("Run ID:   %s\n" % u)
+logging.info("Date:       %s" % str(date.today()))
+logging.info("Time:       %s" % str(datetime.datetime.now().time()).rsplit(".",1)[0])
+logging.info("Program:    PropagAtE v1.0.0")
+logging.info("Run ID:     %s\n" % u)
 
 logging.info("Time (min) |  Log                                                   ")
 logging.info("--------------------------------------------------------------------")
@@ -246,7 +261,7 @@ if forward != '' and fasta != '':
         base = fasta.rsplit(".",1)[0]
 
     logging.info("%s         Checking format of FASTA file, replacing spaces if necessary." % str(round((time.time() - float(start))/60,1)))
-    with open(fasta, 'r') as fasta_in, open(fasta.rsplit(".",1)[0] + ".no-spaces." + fasta.rsplit(".",1)[1], 'w') as fasta_out:
+    with open(fasta, 'r') as fasta_in, open(outpath + fasta.rsplit(".",1)[0] + ".no-spaces." + fasta.rsplit(".",1)[1], 'w') as fasta_out:
         for name,seq in SimpleFastaParser(fasta_in):
             if " " in name:
                 replace = True
@@ -254,40 +269,41 @@ if forward != '' and fasta != '':
             fasta_out.write(">" + str(name) + "\n" + str(seq) + "\n")
     if replace == True:
         logging.info('%s         Spaces identified in sequence names. Replaced with "~~".' % str(round((time.time() - float(start))/60,1)))
-        fasta = fasta.rsplit(".",1)[0] + ".no-spaces." + fasta.rsplit(".",1)[1]
+        fasta = outpath + fasta.rsplit(".",1)[0] + ".no-spaces." + fasta.rsplit(".",1)[1]
 
-    if not os.path.exists(str(base)+".bowtie2.index.1.bt2"):
+    if not os.path.exists(outpath + str(base)+".bowtie2.index.1.bt2"):
         logging.info("%s         Building index ..." % str(round((time.time() - float(start))/60,1)))
         build = True
-        subprocess.run("bowtie2-build " + str(fasta) + " " + str(base)+".bowtie2.index > /dev/null 2> /dev/null", shell=True)
+        subprocess.run("bowtie2-build " + str(fasta) + " " + outpath + str(base)+".bowtie2.index > /dev/null 2> /dev/null", shell=True)
     else:
         build = False
         logging.info("%s         Existing index identified, skipping build ..." % str(round((time.time() - float(start))/60,1)))
     logging.info("%s         Mapping reads ..." % str(round((time.time() - float(start))/60,1)))
     if id != '':
-        subprocess.run("bowtie2 -x " + str(base)+".bowtie2.index -1 " + str(forward) + " -2 " + str(reverse) + " -S " + str(base)+"." + str(id) + ".sam -q -p " + str(threads) + " --no-unal > /dev/null 2> /dev/null", shell=True)
+        subprocess.run("bowtie2 -x " + outpath + str(base)+".bowtie2.index -1 " + str(forward) + " -2 " + str(reverse) + " -S " + outpath + str(base)+"." + str(id) + ".sam -q -p " + str(threads) + " --no-unal > /dev/null 2> /dev/null", shell=True)
     else:
-        subprocess.run("bowtie2 -x " + str(base)+".bowtie2.index -1 " + str(forward) + " -2 " + str(reverse) + " -S " + str(base)+".sam -q -p " + str(threads) + " --no-unal > /dev/null 2> /dev/null", shell=True)
+        subprocess.run("bowtie2 -x " + outpath + str(base)+".bowtie2.index -1 " + str(forward) + " -2 " + str(reverse) + " -S " + outpath + str(base)+".sam -q -p " + str(threads) + " --no-unal > /dev/null 2> /dev/null", shell=True)
     if args.clean == True and build == True:
-        subprocess.run("rm " + str(base)+".bowtie2.index.* 2> /dev/null", shell=True)
+        subprocess.run("rm " + outpath + str(base)+".bowtie2.index.* 2> /dev/null", shell=True)
     logging.info("%s         Bowtie2 done." % str(round((time.time() - float(start))/60,1)))
     if str(id) != "":
-        samfile = str(base)+"." + str(id) + ".sam"
+        samfile = outpath + str(base)+"." + str(id) + ".sam"
     else:
-        samfile = str(base)+".sam"
-    subprocess.run("rm " + fasta.rsplit(".",1)[0] + ".no-spaces." + fasta.rsplit(".",1)[1] + " 2> /dev/null", shell=True)
+        samfile = outpath + str(base)+".sam"
+    subprocess.run("rm " + outpath + fasta.rsplit(".",1)[0] + ".no-spaces." + fasta.rsplit(".",1)[1] + " 2> /dev/null", shell=True)
 
 # Read in prophage coordinate data
 prophage_dict = {}
 prophage_dict_frags = {}
 vibrant_genomes_full = []
 logging.info("%s         Generating a list of all prophage regions ..." % str(round((time.time() - float(start))/60,1)))
+logging.info("%s         Distinguishing host from prophage names by the term '%s' ..." % (str(round((time.time() - float(start))/60,1)),str(termsplit)))
 with open(vibe, 'r') as vibrant:
     phage_list = vibrant.read().replace("\n","\t").split("\t")
     if phage_list[0] == "scaffold" and phage_list[1] == "fragment" and phage_list[5] == "nucleotide start" and phage_list[6] == "nucleotide stop":
         n = 9
         while n < len(phage_list):
-            name = str(phage_list[n]).split("_fragment_")[0]
+            name = str(phage_list[n]).split(termsplit)[0]
             if replace == True:
                 name = name.replace(" ", str(spaces))
             if name[0] == "'" or name[0] == '"':
@@ -298,6 +314,21 @@ with open(vibe, 'r') as vibrant:
                 frag = str(phage_list[n])
             if frag[0] == "'" or frag[0] == '"':
                 frag = frag[1:-1]
+
+            if n == 9: # in case of error
+                save_name = name
+                save_frag = frag
+            if name != '' and frag != '' and name == frag: # names were unable to be split
+                sys.stderr.write("\nError: prophage names could not be distinguished from host names. Check accuracy of -y flag input. Below are the names that caused the issue. Exiting.\n")
+                sys.stderr.write("Host name detected:       %s\n" % name)
+                sys.stderr.write("Prophage name detected:   %s\n" % frag)
+                sys.stderr.write("-y flag input detected:   %s\n" % termsplit)
+                logging.info("\nError: prophage names could not be distinguished from host names. Check accuracy of -y flag input. Below are the names that caused the issue. Exiting.\n")
+                logging.info("Host name detected:       %s" % name)
+                logging.info("Prophage name detected:   %s" % frag)
+                logging.info("-y flag input detected:   %s" % termsplit)
+                exit(1)
+
             prophage_dict.update({str(name) + "~" + str(phage_list[n+4]):str(frag)})
             prophage_dict.update({str(name) + "~" + str(phage_list[n+5]):str(frag)})
             prophage_dict_frags.update({str(name):str(frag)})
@@ -308,7 +339,7 @@ with open(vibe, 'r') as vibrant:
     elif phage_list[0] == "scaffold" and phage_list[1] == "fragment" and phage_list[2] == "start" and phage_list[3] == "stop":
         n = 5
         while n < len(phage_list):
-            name = str(phage_list[n]).split("_fragment_")[0]
+            name = str(phage_list[n]).split(termsplit)[0]
             if replace == True:
                 name = name.replace(" ", str(spaces))
             if name[0] == "'" or name[0] == '"':
@@ -319,6 +350,21 @@ with open(vibe, 'r') as vibrant:
                 frag = str(phage_list[n])
             if frag[0] == "'" or frag[0] == '"':
                 frag = frag[1:-1]
+
+            if n == 5: # in case of error
+                save_name = name
+                save_frag = frag
+            if name != '' and frag != '' and name == frag: # names were unable to be split
+                sys.stderr.write("\nError: prophage names could not be distinguished from host names. Check accuracy of -y flag input. Below are the names that caused the issue. Exiting.\n")
+                sys.stderr.write("Host name detected:       %s\n" % name)
+                sys.stderr.write("Prophage name detected:   %s\n" % frag)
+                sys.stderr.write("-y flag input detected:   %s\n" % termsplit)
+                logging.info("\nError: prophage names could not be distinguished from host names. Check accuracy of -y flag input. Below are the names that caused the issue. Exiting.\n")
+                logging.info("Host name detected:       %s" % name)
+                logging.info("Prophage name detected:   %s" % frag)
+                logging.info("-y flag input detected:   %s" % termsplit)
+                exit(1)
+
             prophage_dict.update({str(name) + "~" + str(phage_list[n+1]):str(frag)})
             prophage_dict.update({str(name) + "~" + str(phage_list[n+2]):str(frag)})
             prophage_dict_frags.update({str(name):str(frag)})
@@ -354,7 +400,7 @@ if samfile != '':
         logging.info("%s         Alignment .sam input identified, processing gaps/mismatches ..." % str(round((time.time() - float(start))/60,1)))
         tossed = 0
         kept = 0
-        with open(samfile, 'r') as sf, open(str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam', 'w') as psf:
+        with open(samfile, 'r') as sf, open(outpath + str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam', 'w') as psf:
             for line in sf:
                 if "XG:i:" in line and "XM:i:" in line:
                     xg = line.split("\t")[15]
@@ -370,7 +416,7 @@ if samfile != '':
                     psf.write(line)
         if reads_input == True and args.clean == True:
             subprocess.run("rm " + str(samfile), shell=True) # remove non-processed sam
-        samfile = str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam'
+        samfile = outpath + str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam'
         try:
             temp = samfile.rsplit("/",1)[1]
             base = temp.rsplit(".",1)[0]
@@ -381,9 +427,9 @@ if samfile != '':
         logging.info("%s         Alignment .sam input identified, skipping gaps/mismatches processing ..." % str(round((time.time() - float(start))/60,1)))
 
     logging.info("%s         Converting .sam to .bam ..." % str(round((time.time() - float(start))/60,1)))
-    subprocess.run(sampath + "samtools view -S -b " + str(samfile) + " > " + str(base) + ".bam 2> /dev/null", shell=True)
+    subprocess.run(sampath + "samtools view -S -b " + str(samfile) + " > " + outpath + str(base) + ".bam 2> /dev/null", shell=True)
     logging.info("%s         Conversion done." % str(round((time.time() - float(start))/60,1)))
-    bamfile = str(base) + ".bam"
+    bamfile = outpath + str(base) + ".bam"
 
 samfile_cleaned = False
 if reads_input == True and args.clean == True:
@@ -393,7 +439,6 @@ if reads_input == True and args.clean == True:
 # Gap/mismatch processing for bam file
 if bamfile != '':
     bam_input = True
-
     if sam_input == False and args.all == False:
         try:
             temp = bamfile.rsplit("/",1)[1]
@@ -401,14 +446,14 @@ if bamfile != '':
         except Exception:
             base = bamfile.rsplit(".",1)[0]
         logging.info("%s         Alignment .bam input identified, coverting to .sam for gap/mismatch filtering ..." % str(round((time.time() - float(start))/60,1)))
-        subprocess.run(sampath + "samtools view -h -o " + str(base) + ".sam " + str(bamfile) + " 2> /dev/null", shell=True)
+        subprocess.run(sampath + "samtools view -h -o " + outpath + str(base) + ".sam " + str(bamfile) + " 2> /dev/null", shell=True)
 
-        samfile = str(base) + ".sam"
+        samfile = outpath + str(base) + ".sam"
         processed = True
         logging.info("%s         Alignment .sam input identified, processing gaps/mismatches ..." % str(round((time.time() - float(start))/60,1)))
         tossed = 0
         kept = 0
-        with open(samfile, 'r') as sf, open(str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam', 'w') as psf:
+        with open(samfile, 'r') as sf, open(outpath + str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam', 'w') as psf:
             for line in sf:
                 if "XG:i:" in line and "XM:i:" in line:
                     xg = line.split("\t")[15]
@@ -424,18 +469,17 @@ if bamfile != '':
                     psf.write(line)
         if args.clean == True:
             subprocess.run("rm " + str(samfile), shell=True) # remove non-processed sam
-        samfile = str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam'
+        samfile = outpath + str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam'
         try:
             temp = samfile.rsplit("/",1)[1]
             base = temp.rsplit(".",1)[0]
         except Exception:
             base = samfile.rsplit(".",1)[0]
         logging.info("%s         %s of %s total aligned reads were tossed for having too many gaps/mismatches ..." % (str(round((time.time() - float(start))/60,1)),str(tossed),str(tossed+kept)))
-
         logging.info("%s         Converting processed .sam to .bam ..." % str(round((time.time() - float(start))/60,1)))
-        subprocess.run(sampath + "samtools view -S -b " + str(samfile) + " > " + str(base) + ".bam 2> /dev/null", shell=True)
+        subprocess.run(sampath + "samtools view -S -b " + str(samfile) + " > " + outpath + str(base) + ".bam 2> /dev/null", shell=True)
         logging.info("%s         Conversion done." % str(round((time.time() - float(start))/60,1)))
-        bamfile = str(base) + ".bam"
+        bamfile = outpath + str(base) + ".bam"
 
         if args.clean == True:
             samfile_cleaned = True
@@ -448,9 +492,9 @@ if bamfile != '':
         base = temp.rsplit(".",1)[0]
     except Exception:
         base = bamfile.rsplit(".",1)[0]
-    subprocess.run(sampath + "samtools sort -o " + str(base) + ".sorted.bam " + str(bamfile) + " 2> /dev/null", shell=True)
+    subprocess.run(sampath + "samtools sort -o " + outpath + str(base) + ".sorted.bam " + str(bamfile) + " 2> /dev/null", shell=True)
     logging.info("%s         Sorting done." % str(round((time.time() - float(start))/60,1)))
-    sortbam = str(base) + ".sorted.bam"
+    sortbam = outpath + str(base) + ".sorted.bam"
 
 bamfile_cleaned = False
 if sam_input == True and args.clean == True:
@@ -467,15 +511,13 @@ if sortbamfile != '':
             base = sortbamfile.rsplit(".",1)[0]
 
         logging.info("%s         Sorted .bam input identified, coverting to .sam for gap/mismatch filtering ..." % str(round((time.time() - float(start))/60,1)))
-        subprocess.run(sampath + "samtools view -h -o " + str(base) + ".sam " + str(sortbamfile) + " 2> /dev/null", shell=True)
-
-        samfile = str(base) + ".sam"
+        subprocess.run(sampath + "samtools view -h -o " + outpath + str(base) + ".sam " + str(sortbamfile) + " 2> /dev/null", shell=True)
+        samfile = outpath + str(base) + ".sam"
         processed = True
         logging.info("%s         Processing gaps/mismatches ..." % str(round((time.time() - float(start))/60,1)))
         tossed = 0
         kept = 0
-
-        with open(samfile, 'r') as sf, open(str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam', 'w') as psf:
+        with open(samfile, 'r') as sf, open(outpath + str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam', 'w') as psf:
             for line in sf:
                 if "XG:i:" in line and "XM:i:" in line:
                     xg = line.split("\t")[15]
@@ -492,8 +534,7 @@ if sortbamfile != '':
 
         if args.clean == True:
             subprocess.run("rm " + str(samfile), shell=True) # remove non-processed sam
-
-        samfile = str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam'
+        samfile = outpath + str(base)+'.gap-' + str(gaps) + '_mm-' + str(mismatches) + '.sam'
         try:
             temp = samfile.rsplit("/",1)[1]
             base = temp.rsplit(".",1)[0]
@@ -502,9 +543,9 @@ if sortbamfile != '':
         logging.info("%s         %s of %s total aligned reads were tossed for having too many gaps/mismatches ..." % (str(round((time.time() - float(start))/60,1)),str(tossed),str(tossed+kept)))
 
         logging.info("%s         Converting processed .sam to .bam ..." % str(round((time.time() - float(start))/60,1)))
-        subprocess.run(sampath + "samtools view -S -b " + str(samfile) + " > " + str(base) + ".bam 2> /dev/null", shell=True)
+        subprocess.run(sampath + "samtools view -S -b " + str(samfile) + " > " + outpath + str(base) + ".bam 2> /dev/null", shell=True)
         logging.info("%s         Conversion done." % str(round((time.time() - float(start))/60,1)))
-        bamfile = str(base) + ".bam"
+        bamfile = outpath + str(base) + ".bam"
 
         if args.clean == True:
             samfile_cleaned = True
@@ -516,9 +557,9 @@ if sortbamfile != '':
             base = temp.rsplit(".",1)[0]
         except Exception:
             base = bamfile.rsplit(".",1)[0]
-        subprocess.run(sampath + "samtools sort -o " + str(base) + ".sorted.bam " + str(bamfile) + " 2> /dev/null", shell=True)
+        subprocess.run(sampath + "samtools sort -o " + outpath + str(base) + ".sorted.bam " + str(bamfile) + " 2> /dev/null", shell=True)
         logging.info("%s         Sorting done." % str(round((time.time() - float(start))/60,1)))
-        sortbam = str(base) + ".sorted.bam"
+        sortbam = outpath + str(base) + ".sorted.bam"
         if args.clean == True:
             samfile_cleaned = True
             subprocess.run("rm " + str(bamfile), shell=True) # remove processed or non-processed sam
@@ -533,13 +574,9 @@ if sortbamfile != '':
         logging.info("%s         Sorted alignment .bam input identified, skipping sorting and gap/mismatch processing." % str(round((time.time() - float(start))/60,1)))
 
 # Extract coverage for each nucleotide
-temp = str(base) + ".temp-list.txt"
+temp = outpath + str(base) + ".temp-list.txt"
 subprocess.run("echo '" + str(sortbam) + "' > " + str(temp), shell=True)
-try:
-    cov_temp = str(sortbam).rsplit("/",1)[1]
-    cov_file = str(cov_temp).rsplit(".",1)[0] + ".coverage-by-nt.tsv"
-except Exception:
-    cov_file = str(sortbam).rsplit(".",1)[0] + ".coverage-by-nt.tsv"
+cov_file = str(sortbam).rsplit(".",1)[0] + ".coverage-by-nt.tsv"
 logging.info("%s         Indexing sorted .bam file ..." % str(round((time.time() - float(start))/60,1)))
 subprocess.run(sampath + "samtools index " + str(sortbam), shell=True) # index bam file
 logging.info("%s         Extracting coverage information from sorted .bam file ..." % str(round((time.time() - float(start))/60,1)))
@@ -548,8 +585,8 @@ logging.info("%s         Extracting coverage information from sorted .bam file .
 for genome in vibrant_genomes_full:
     subprocess.run(sampath + "samtools depth -r " + str(genome) + ":0-999999999 -a -f " + str(temp) + " >> " + cov_file + " 2> /dev/null", shell=True) # extract coverage info
 
-subprocess.run("rm " + str(temp), shell=True)
-subprocess.run("rm " + str(sortbam) + ".bai", shell=True) # remove index
+subprocess.run("rm " + str(temp) + " 2> /dev/null", shell=True)
+subprocess.run("rm " + str(sortbam) + ".bai 2> /dev/null", shell=True) # remove index
 subprocess.run("echo 'next\t0\t0\n' >> " + str(cov_file), shell=True)
 logging.info("%s         Coverage extraction done." % str(round((time.time() - float(start))/60,1)))
 
@@ -560,6 +597,15 @@ if int(os.stat(cov_file).st_size) < 50: # Exit if file is empty (< 50 bytes)
         bamfile = "N/A"
     subprocess.run("rm " + str(cov_file), shell=True)
     logging.info("%s         No coverage identified for scaffolds with integrated prophages. Analysis finished." % str(round((time.time() - float(start))/60,1)))
+    logging.info("")
+    logging.info("")
+    logging.info("CAUTION:")
+    logging.info("         'No coverage identified' may be due to an incorrect -y flag.")
+    logging.info("          Please verify -y input correctly distinguishes host from prophage sequences.")
+    logging.info("          This can be verified by checking the -v or -f inputs.")
+    logging.info("          Example host name detected:       %s" % save_name)
+    logging.info("          Example prophage name detected:   %s" % save_frag)
+    logging.info("          -y flag input:                    %s" % termsplit)
     logging.info("")
     logging.info("")
     logging.info("Log file:               %s" % logfilename)
@@ -699,7 +745,7 @@ total_adj = []
 with open(outfile, 'w') as output:
     output.write("prophage\thost\tactive\tMW_pvalue\tCohenD\tprophage-host_ratio\tmean_difference\tprophage_len\tprophage_mean_cov\tprophage_median_cov\tprophage_sd_cov\thost_len\thost_mean_cov\thost_median_cov\thost_sd_cov\n")
     for key in prophage_coverage.keys():
-        host = str(key.split("_fragment_")[0])
+        host = str(key.split(termsplit)[0])
         if host in host_coverage.keys():
             cov_p = [int(i) for i in prophage_coverage[key][1:]]
             cov_h = [int(i) for i in host_coverage[host][1:]]
