@@ -117,17 +117,16 @@ Test out a small dataset of mixed active and dormant prophages. See `example_out
 
 *Note:* The ways to run PropagAtE (i.e., set up flags) are not limited to these test examples.  
 
-*Note:* The results from these examples should be identical.  
+*Note:* The results from examples \#5 and \#6 should be identical.  
 
-5) The inputs are scaffold sequences, short reads, and a [VIBRANT](https://github.com/AnantharamanLab/VIBRANT) prophage coordinates file. The reads may be unzipped or in gzip format depending on preference. Here they are gzipped for easier upload/download on GitHub.  
-    `python3 ../PropagAtE_run.py -f example_sequence.fasta -r sample_forward_reads.fastq.gz sample_reverse_reads.fastq.gz -v VIBRANT_integrated_prophage_coordinates_example.tsv -o PropagAtE_example_results_from_reads.tsv`  
+5) The inputs are scaffold sequences, short reads, and a [VIBRANT](https://github.com/AnantharamanLab/VIBRANT) prophage coordinates file. The reads may be unzipped or in gzip format depending on preference. Here they are gzipped for easier upload/download on GitHub. You may need to specify `python3` at the beginning of the command.  
+    `../PropagAtE_run.py -f example_sequence.fasta -r sample_forward_reads.fastq.gz sample_reverse_reads.fastq.gz -v VIBRANT_integrated_prophage_coordinates_example.tsv -o PropagAtE_example_results_from_reads.tsv -clean`  
 
-6) The inputs are a SAM format alignment file and a VIBRANT prophage coordinates file.  
-    `python3 ../PropagAtE_run.py -sb example_sequence.sorted.bam -v VIBRANT_integrated_prophage_coordinates_example.tsv -o PropagAtE_example_results_from_sb.tsv`  
-
+6) The inputs are a BAM format alignment file and a manually generated prophage coordinates file. You may need to specify `python3` at the beginning of the command.  
+    `../PropagAtE_run.py -sb example_sequence.sorted.bam -v manual_coordinates_example.tsv -o PropagAtE_example_results_from_sb.tsv`  
 
 #### Input Data  
-There are two main formats for sequence data input: (1) sequences (`-f`) with reads (`-r`) or (2) a SAM/BAM (`-s`/`-b`/`-sb`) alignment file (just one type). The flag used for data input depends on the format of the input. There are two main formats for prophage input: (1) VIBRANT results coordinate file or (2) manually generated coordinate file. The same flag (`-v`) is used for either prophage input. *Note:* Either format for sequence data input is compatible with either format for prophage input. Here are the possible combinations of input data flags: (`-f -r -v`), (`-s -v`), (`-b -v`) or (`-sb -v`).
+There are two main formats for sequence data input: (1) sequences (`-f`) with reads (`-r`) or (2) a SAM/BAM (`-s`/`-b`/`-sb`) alignment file (just one type). The flag used for data input depends on the format of the input. *Note:* receiving the error "samtools index: failed to create index" may indicate that `-sb` was used instead of `-b`. There are two main formats for prophage input: (1) VIBRANT results coordinate file or (2) manually generated coordinate file. The same flag (`-v`) is used for either prophage input. *Note:* Either format for sequence data input is compatible with either format for prophage input. Here are the possible combinations of input data flags: (`-f -r -v`), (`-s -v`), (`-b -v`) or (`-sb -v`).
 
 * For the `-f` input the phrase "\_fragment\_" should not appear in the definition line (the line starting with ">" before each sequence) because this term is used during analysis and prophage parsing. For details why, see [VIBRANT documentation](https://github.com/AnantharamanLab/VIBRANT).
 
@@ -141,18 +140,20 @@ There are two main formats for prophage coordinates input (`-v`): (1) VIBRANT re
 
 * *VIBRANT method*: an automatically generated results file can be used directly from a VIBRANT analysis. VIBRANT v1.2.1 or greater must be used to have this file available. The file will named `VIBRANT_integrated_prophage_coordinates` and can be found in the `VIBRANT_results` output folder. No modification needs to be done for this file to be used an input for PropagAtE. The columns used are `scaffold`, `fragment`, `nucleotide start` and `nucleotide stop`.
 
-* *manual method*: the other option, if prophages were identified by a different method, is to manually generate a prophage coordinates file compatible with PropagAtE. This method is also simple and requires only four columns of data. The columns must be in tab-separated format and have the following headers: `scaffold`, `fragment`, `start` and `stop`.
+* *manual method*: the other option, if prophages were identified by a different method, is to manually generate a prophage coordinates file compatible with PropagAtE. This method is also simple and requires only four columns of data. The columns must be in tab-separated format and have the following headers: `scaffold`, `fragment`, `start` and `stop`. *Note*: use the `-y` flag to indicate terminology for naming host and prophage sequence names. The default terminology is `_fragment_#`, where `#` is an ID number (any number). Example: `scaffold_999_fragment_1`. See the `-y` flag below for more details.  
   1. `scaffold` is the name of the entire host sequencing that contains the prophage(s). Example: `scaffold_999`
-  2. `fragment` is the name of the prophage fragment. *IMPORTANT*: to be consistent with VIBRANT terminology the prophage fragment must contain the term `_fragment_#` at the end of the name, where `#` is an ID number (any number) in case of multiple prophage fragments per scaffold. Example: `scaffold_999_fragment_1`
-  3. `start` is the nucleotide number where the prophage starts
-  4. `stop` is the nucleotide number where the prophage stops
+  2. `fragment` is the name of the prophage fragment. Example: `scaffold_999_fragment_1`
+  3. `start` is the nucleotide number where the prophage starts. Example: `2500`
+  4. `stop` is the nucleotide number where the prophage stops. Example: `58000`
+
+  *CAUTION*: if the wrong `-y` term is given then the prophage/host names will not accurately match the alignment file. This is because the host name will not match the input sequence file (`-f`). For example, if `-y fragment` is given for the scenario above where `scaffold_999` is the host and `scaffold_999_fragment_1` is the prophage, then PropagAtE will exit with zero coverage detected. This is because `scaffold_999_fragment_1` will be split by `-y fragment` to yield the respective host name `scaffold_999_` rather than `scaffold_999` (note the extra underscore symbol). The host name `scaffold_999_` will not match the input sequence file.  
 
 #### Input File Extensions  
-* `-f`: *.fasta*, *.fna*, *.fa* or *.fsa*  
-* `-s`: *.sam*  
-* `-b` or `-sb`: *.bam*  
-* `-r`: *.fastq* or *.fastq.gz*  
-
+* `-f`: *.fasta*, *.fna*, *.fa* or *.fsa*  (required)  
+* `-s`: *.sam*  (required)  
+* `-b` or `-sb`: *.bam*  (required)  
+* `-r`: *.fastq* or *.fastq.gz*  (required)  
+* `-o`: *.tsv*  (suggested)  
 
 ### Arguments and Flags
 
@@ -160,17 +161,21 @@ PropagAtE comes with a couple of very simple optional arguments. At any point yo
 
 *Common optional arguments*
 
-* `-o`: name of output tab-separated file. The suggested extension is `.tsv` or `.txt`. The default output will be named according to a randomly generated unique run ID.  
+* `-o`: name of output tab-separated file. The suggested extension is `.tsv` or `.txt`. The default output, if not specified, will be named according to a randomly generated unique run ID. To specify and output folder containing all intermediate and final files, provide a path location to this flag. The folder must already exist. For example, specifying `-o propagate_test_results.tsv` will deposit all files into the current working directory, whereas `-o ../propagate_test_results.tsv` or `-o /home/User/folder/propagate_test_results.tsv` will deposit them in the indicated locations.  
 
 * `-t`: number of threads used for Bowtie2 read mapping. Read mapping is the only multi-thread process. Increasing threads used will increase speed. This flag is only compatible with `-r/-f` data input. Default = `1`.  
+
+* `-clean`: SAM/BAM files can be very large, and Bowtie2 index files are typically temporary. Use this setting to remove any generated SAM, unsorted BAM and/or Bowtie2 index files. All input data files (regardless of format) and sorted BAM files will always be retained. Default = `off`.
+
+* `-i`: a unique ID to append to any SAM files generated by Bowtie2. This is useful for running multiple input read datasets on a single input sequence file. It is suggested to use the read dataset ID.
+
+* `-y`: term used for distinguishing host and prophage sequence names. The default terminology is `_fragment_#`, where `#` is an ID number (any number). This is consistent with VIBRANT terminology. Example: `scaffold_999` is the host and `scaffold_999_fragment_1` is a prophage. The fragment `#` will be different when multiple prophages are present on a single scaffold. An example use of setting `-y` is for [VirSorter](https://peerj.com/articles/985/) predicted integrated prophages. Example: `"-y-gene"` (quotes included) because `-gene_#-gene_#` is the terminology used by VirSorter. *Note* the lack of a space in `"-y-gene"` and surrounding quotes. This is necessary because there is a dash in the term that should not be confused with a flag. Partial matches, such as `"-y-ge"` and `-y _frag`, are also acceptable as long as they are unique and distinguish the host and prophage regions accurately. Another example would be for [PHASTER](https://phaster.ca/) which could use `-y :`. All prophages must be named similarly (e.g., cannot have both `_fragment_` and `-gene`).  
 
 *Uncommon optional arguments*
 
 * `-g`: number of gap extensions allowed in read alignment (per read). The default is `1` and is optimized for more accurate read alignment. Increasing this value will decrease sensitivity but likely increase the number of reads aligned. This setting is compatible with any data input format. The allowed values are between 0 and 3. Use the `-all` flag to skip both `-g` and `-m`.
 
 * `-m`: number of mismatches allowed in read alignment (per read). The default is `3` and is optimized for more accurate read alignment while allowing for prophage genome replication error. Increasing this value will decrease sensitivity but will increase the number of reads aligned. This setting is compatible with any data input format. The allowed values are between 0 and 10. Use the `-all` flag to skip both `-g` and `-m`.  
-
-* `-clean`: SAM/BAM files can be very large, and Bowtie2 index files are typically temporary. Use this setting to remove any generated SAM, unsorted BAM and/or Bowtie2 index files. All input data files (regardless of format) and sorted BAM files will always be retained. Default = `off`.
 
 * `-z`: character(s) used to replace spaces in genome/scaffold names. Use this setting if spaces were replaced in the SAM/BAM alignment files but not in the prophage coordinates file. Use "\~\~" for PropagAtE-generated alignments.)
 
@@ -179,8 +184,6 @@ PropagAtE comes with a couple of very simple optional arguments. At any point yo
 * `-e`: minimum effect size for significance by Cohen's *d* test. The default is `0.75` and the minimum is `0.6`. Values greater than `0.75` will represent a more significant difference in a prophage:host coverage ratio. Setting values below `0.75` may introduce false identifications (i.e., dormant prophages identified as active) whereas setting the value too high (e.g., `1.5`) may reduce identification of active prophages.  
 
 * `-c`: minimum prophage:host coverage ratio for significance. The default is `1.75` and the minimum is `1.5`. Setting values below `1.75` may introduce false identifications (i.e., dormant prophages identified as active) whereas setting the value too high (e.g., `3`) may reduce identification of active prophages.  
-
-* `-i`: a unique ID to append to any SAM files generated by Bowtie2. This is useful for running multiple input read datasets on a single input sequence file. It is suggested to use the read dataset ID.
 
 *Likely unused optional arguments*
 
