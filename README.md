@@ -75,7 +75,7 @@ Please ensure the following programs are installed and in your machine's PATH. N
 
 ##### Example Installations  
 1. Python3: see [Python webpage](https://www.python.org).  
-2. Bowtie2: `conda install -c bioconda bowtie2`, [GitHub](https://github.com/samtools/samtools) or follow instructions in the [Bowtie2 manual](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml).  
+2. Bowtie2: `conda install -c bioconda bowtie2`, [GitHub](https://github.com/BenLangmead/bowtie2) or follow instructions in the [Bowtie2 manual](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml).  
 3. Samtools: [GitHub](https://github.com/samtools/samtools) or follow instructions on the [Samtools webpage](http://www.htslib.org/download/)
 
 
@@ -111,19 +111,19 @@ PropagAtE is built for efficiently running on metagenomes, individual isolates g
 
 ### Testing PropagAtE
 
-Test out a small dataset of mixed active and dormant prophages. See `example_output/PropagAtE_example_dataset` for how the results should look. These examples assume the command is being called from the `example_output` folder.
+Test out a small dataset of mixed active and dormant prophages. These examples assume the command is being called from the `example_output/active` or `example_output/dormant` folders.
 
 *Note:* PropagAtE does not write to standard out (command prompt screen) while running or when it finishes (i.e., not verbose). However, PropagAtE will write to standard out in the event that it encounters an error, such as incorrect use of optional arguments, incorrect input file format, missing dependencies or incorrect dependency versions.  
 
 *Note:* The ways to run PropagAtE (i.e., set up flags) are not limited to these test examples.  
 
-*Note:* The results from examples \#5 and \#6 should be identical.  
+5) *Dormant prophage test:* The inputs are scaffold sequences, short reads, and a [VIBRANT](https://github.com/AnantharamanLab/VIBRANT) prophage coordinates file. The reads may be unzipped or in gzip format depending on preference. Here they are gzipped for easier upload/download on GitHub. You may need to specify `python3` at the beginning of the command.  
+    `../../PropagAtE_run.py -f example_sequence.fasta -r sample_forward_reads.fastq.gz sample_reverse_reads.fastq.gz -v VIBRANT_integrated_prophage_coordinates_example.tsv -o PropagAtE_example_results_dormant.tsv -clean`  
 
-5) The inputs are scaffold sequences, short reads, and a [VIBRANT](https://github.com/AnantharamanLab/VIBRANT) prophage coordinates file. The reads may be unzipped or in gzip format depending on preference. Here they are gzipped for easier upload/download on GitHub. You may need to specify `python3` at the beginning of the command.  
-    `../PropagAtE_run.py -f example_sequence.fasta -r sample_forward_reads.fastq.gz sample_reverse_reads.fastq.gz -v VIBRANT_integrated_prophage_coordinates_example.tsv -o PropagAtE_example_results_from_reads.tsv -clean`  
+6) *Active prophage test:* The inputs are a sorted BAM format alignment file and a manually generated prophage coordinates file. You may need to specify `python3` at the beginning of the command.
+    `../../PropagAtE_run.py -sb AE017333_partial_genome.sorted.bam -v manual_prophage_coordinates_AE017333.tsv -o PropagAtE_example_results_active.tsv -all`  
 
-6) The inputs are a BAM format alignment file and a manually generated prophage coordinates file. You may need to specify `python3` at the beginning of the command.  
-    `../PropagAtE_run.py -sb example_sequence.sorted.bam -v manual_coordinates_example.tsv -o PropagAtE_example_results_from_sb.tsv`  
+Due to large file sizes the full data (i.e., full alignment and read sets) for the active prophage example could not be uploaded to GitHub. Please see the read set [SRR1137233](https://www.ncbi.nlm.nih.gov/sra/?term=SRR1137233) from [Hertel et al. 2015](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0120759) and the genome [AE017333.1](https://www.ncbi.nlm.nih.gov/nuccore/AE017333.1/) for the full data.  
 
 #### Input Data  
 There are two main formats for sequence data input: (1) sequences (`-f`) with reads (`-r`) or (2) a SAM/BAM (`-s`/`-b`/`-sb`) alignment file (just one type). The flag used for data input depends on the format of the input. *Note:* receiving the error "samtools index: failed to create index" may indicate that `-sb` was used instead of `-b`. There are two main formats for prophage input: (1) VIBRANT results coordinate file or (2) manually generated coordinate file. The same flag (`-v`) is used for either prophage input. *Note:* Either format for sequence data input is compatible with either format for prophage input. Here are the possible combinations of input data flags: (`-f -r -v`), (`-s -v`), (`-b -v`) or (`-sb -v`).
@@ -138,7 +138,7 @@ There are two main formats for sequence data input: (1) sequences (`-f`) with re
 
 There are two main formats for prophage coordinates input (`-v`): (1) VIBRANT results coordinate file or (2) manually generated coordinate file.  
 
-* *VIBRANT method*: an automatically generated results file can be used directly from a VIBRANT analysis. VIBRANT v1.2.1 or greater must be used to have this file available. The file will named `VIBRANT_integrated_prophage_coordinates` and can be found in the `VIBRANT_results` output folder. No modification needs to be done for this file to be used an input for PropagAtE. The columns used are `scaffold`, `fragment`, `nucleotide start` and `nucleotide stop`.
+* *VIBRANT method*: an automatically generated results file can be used directly from a VIBRANT analysis. VIBRANT v1.2.1 or greater must be used to have this file available. The file will be named `VIBRANT_integrated_prophage_coordinates` and can be found in the `VIBRANT_results` output folder. No modification needs to be done for this file to be used an input for PropagAtE. The columns used are `scaffold`, `fragment`, `nucleotide start` and `nucleotide stop`.
 
 * *manual method*: the other option, if prophages were identified by a different method, is to manually generate a prophage coordinates file compatible with PropagAtE. This method is also simple and requires only four columns of data. The columns must be in tab-separated format and have the following headers: `scaffold`, `fragment`, `start` and `stop`. *Note*: use the `-y` flag to indicate terminology for naming host and prophage sequence names. The default terminology is `_fragment_#`, where `#` is an ID number (any number). Example: `scaffold_999_fragment_1`. See the `-y` flag below for more details.  
   1. `scaffold` is the name of the entire host sequencing that contains the prophage(s). Example: `scaffold_999`
@@ -146,14 +146,13 @@ There are two main formats for prophage coordinates input (`-v`): (1) VIBRANT re
   3. `start` is the nucleotide number where the prophage starts. Example: `2500`
   4. `stop` is the nucleotide number where the prophage stops. Example: `58000`
 
-  *CAUTION*: if the wrong `-y` term is given then the prophage/host names will not accurately match the alignment file. This is because the host name will not match the input sequence file (`-f`). For example, if `-y fragment` is given for the scenario above where `scaffold_999` is the host and `scaffold_999_fragment_1` is the prophage, then PropagAtE will exit with zero coverage detected. This is because `scaffold_999_fragment_1` will be split by `-y fragment` to yield the respective host name `scaffold_999_` rather than `scaffold_999` (note the extra underscore symbol). The host name `scaffold_999_` will not match the input sequence file.  
+  *CAUTION*: if the wrong `-y` term is given then the prophage/host names will not accurately match the alignment file. This is because the host name will not match the input sequence file (`-f`). For example, if `-y fragment` is given for the scenario above where `scaffold_999` is the host and `scaffold_999_fragment_1` is the prophage, then PropagAtE will exit with zero coverage detected. This is because `scaffold_999_fragment_1` will be split by `-y fragment` to yield the respective host name `scaffold_999_` rather than `scaffold_999` (note the extra underscore symbol). The host name `scaffold_999_` will not match the input sequence file. The correct input would be `-y _fragment_` (or similar terms to split the name at the correct location as long as they are unique: `-y _fragment_`, `-y _fragment`, `-y _frag`, `-y _fr`).
 
 #### Input File Extensions  
 * `-f`: *.fasta*, *.fna*, *.fa* or *.fsa*  (required)  
 * `-s`: *.sam*  (required)  
 * `-b` or `-sb`: *.bam*  (required)  
-* `-r`: *.fastq* or *.fastq.gz*  (required)  
-* `-o`: *.tsv*  (suggested)  
+* `-r`: *.fastq* or *.fastq.gz*  (required)   
 
 ### Arguments and Flags
 
@@ -177,7 +176,7 @@ PropagAtE comes with a couple of very simple optional arguments. At any point yo
 
 * `-m`: number of mismatches allowed in read alignment (per read). The default is `3` and is optimized for more accurate read alignment while allowing for prophage genome replication error. Increasing this value will decrease sensitivity but will increase the number of reads aligned. This setting is compatible with any data input format. The allowed values are between 0 and 10. Use the `-all` flag to skip both `-g` and `-m`.  
 
-* `-z`: character(s) used to replace spaces in genome/scaffold names. Use this setting if spaces were replaced in the SAM/BAM alignment files but not in the prophage coordinates file. Use "\~\~" for PropagAtE-generated alignments.)
+* `-z`: character(s) used to replace spaces in genome/scaffold names. Use this setting if spaces were replaced in the SAM/BAM alignment files but not in the prophage coordinates file. Use "\~\~" for PropagAtE-generated alignments.  
 
 * `-all`: use this setting to skip gap/mismatch processing and keep all aligned reads. Default = `off`.  
 
@@ -193,7 +192,7 @@ PropagAtE comes with a couple of very simple optional arguments. At any point yo
 
 * `-a`: remove outlier coverage values to "a" standard deviations from the average coverage value. This setting takes into account alignment errors, such as those resulting from sequence repeats. Coverage values that appear to be artificially high are removed. Default = `4`.
 
-* `-x`: path to the Samtools executable if it is not in the system's PATH. Depending on the installation method the Samtools executable may or may not be in the system's PATH. The executable can be added to the PATH or this flag can be used. The executable itself (e.g., `/home/User/anaconda3/bin/samtools` or the folder location can be given in this flag (e.g., `/home/User/anaconda3/bin/`).
+* `-x`: path to the Samtools executable if it is not in the system's PATH. Depending on the installation method the Samtools executable may or may not be in the system's PATH. The executable can be added to the PATH or this flag can be used. The executable itself (e.g., `/home/User/anaconda3/bin/samtools`) or the folder location can be given in this flag (e.g., `/home/User/anaconda3/bin/`).
 
 ## Output Explanations  <a name="out"></a>
 
