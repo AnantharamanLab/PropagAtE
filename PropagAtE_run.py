@@ -140,6 +140,10 @@ try:
         exit(1)
 except Exception:
     pass
+if forward != '' and reverse != '' and fasta == '':
+    sys.stderr.write("\nError: Reads (-r) were provided but a sequence file (-f) was not. Exiting.\n")
+    logging.info("\nError: Reads (-r) were provided but a sequence file (-f) was not. Exiting.\n")
+    exit(1)
 try:
     if samfile.rsplit('.',1)[1] != 'sam':
         sys.stderr.write("\nError: Provided sam file must have the extension .sam. Exiting.\n")
