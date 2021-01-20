@@ -294,7 +294,7 @@ if forward != '' and fasta != '':
         samfile = outpath + str(base)+"." + str(id) + ".sam"
     else:
         samfile = outpath + str(base)+".sam"
-    subprocess.run("rm " + outpath + fasta.rsplit(".",1)[0] + ".no-spaces." + fasta.rsplit(".",1)[1] + " 2> /dev/null", shell=True)
+    subprocess.run("rm " + outpath + base + ".no-spaces.fasta 2> /dev/null", shell=True)
 
 # Read in prophage coordinate data
 prophage_dict = {}
