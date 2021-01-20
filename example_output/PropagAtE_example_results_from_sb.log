@@ -1,13 +1,15 @@
-Command:  ../PropagAtE_run.py -sb example_sequence.sorted.bam -v VIBRANT_integrated_prophage_coordinates_example.tsv -o PropagAtE_example_results_from_sb.tsv
+Command:    ../PropagAtE_run.py -v manual_coordinates_example.tsv -o PropagAtE_example_results_from_sb.tsv -sb example_sequence.sorted.bam "-y-gene" -clean
+Outfolder:  /slowdata/data4/PropagAtE_prophage_activity/example_output/
 
-Date:     2021-01-19
-Time:     17:22:05
-Program:  PropagAtE v1.0.0
-Run ID:   247e3f92
+Date:       2021-01-20
+Time:       12:04:39
+Program:    PropagAtE v1.0.0
+Run ID:     f68a7eaa
 
 Time (min) |  Log                                                   
 --------------------------------------------------------------------
 0.0         Generating a list of all prophage regions ...
+0.0         Distinguishing host from prophage names by the term '-gene' ...
 0.0         Number of prophage regions identified: 1
 0.0         Number of unique host regions identified: 1
 0.0         Processing alignment (.sam/.bam) file.
@@ -29,10 +31,10 @@ Time (min) |  Log
 0.0         Statistical tests done. Analysis finished.
 
 
-Log file:               PropagAtE_example_results_from_sb.log
-Output results file:    PropagAtE_example_results_from_sb.tsv
-sam file:               example_sequence.sorted.gap-1_mm-3.sam
-bam file:               example_sequence.sorted.gap-1_mm-3.bam
+Log file:               /slowdata/data4/PropagAtE_prophage_activity/example_output/PropagAtE_example_results_from_sb.log
+Output results file:    /slowdata/data4/PropagAtE_prophage_activity/example_output/PropagAtE_example_results_from_sb.tsv
+sam file:               N/A
+bam file:               N/A
 sorted bam file:        example_sequence.sorted.bam
 
 
