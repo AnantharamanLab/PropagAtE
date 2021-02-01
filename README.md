@@ -15,8 +15,8 @@ kieft@wisc.edu
 PropagAtE v1.0.0  
 
 ## Citation
-If you find PropagAtE useful please consider citing our preprint in *bioRxiv*:  
-Kieft, K., and Anantharaman, K. (2021). Deciphering active prophages from metagenomes. *bioRxiv*.  
+If you find PropagAtE useful please consider citing our preprint in [*bioRxiv*](https://www.biorxiv.org/content/10.1101/2021.01.29.428894v1):  
+Kieft, K., and Anantharaman, K. (2021). Deciphering active prophages from metagenomes. BioRxiv 2021.01.29.428894.  
 
 ______
 
