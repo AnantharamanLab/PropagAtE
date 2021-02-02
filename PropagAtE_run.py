@@ -59,7 +59,7 @@ propagate.add_argument('-m', type=str, nargs=1, default = ['3'], choices=["0", "
 propagate.add_argument('-n', type=str, nargs=1, default = ['5'], help='number of coverage sub-samples to take for Mann-Whitney statistical analysis [default=5, minimum=5].')
 propagate.add_argument('-a', type=str, nargs=1, default = ['4'], choices=["0", "1", "2", "3", "4"], help='remove outlier coverage values "a" standard deviations from the average [default=4].')
 propagate.add_argument('-e', type=str, nargs=1, default = ['0.75'], help="minimum effect size for significance by Cohen's d test [default=0.75, minimum=0.6].")
-propagate.add_argument('-c', type=str, nargs=1, default = ['1.75'], help="minimum prophage:host coverage ratio for significance [default=1.75, minimum=1.5].")
+propagate.add_argument('-c', type=str, nargs=1, default = ['1.65'], help="minimum prophage:host coverage ratio for significance [default=1.65, minimum=1.5].")
 propagate.add_argument('-y', type=str, nargs=1, default = [''], help='term to distinguish host from prophage name in genome/scaffold definition lines [default="_fragment_"].')
 propagate.add_argument('-x', type=str, nargs=1, default = [''], help="path to Samtools executable if not in PATH.")
 propagate.add_argument('-clean', action='store_true', help='use this setting to remove (if applicable) any generated SAM, unsorted BAM and Bowtie2 index files. Will retain any user input files, raw reads and sorted BAM files (default=off).')

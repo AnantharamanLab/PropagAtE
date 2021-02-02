@@ -37,7 +37,7 @@ ______
 ______
 
 ## Updates for v1.0.0: <a name="updates"></a>
-There are currently no updates for PropagAtE. Version 1.0.0 is the initial software release.  
+* Feb 2 2021: edited default `-c` from 1.75 to 1.65. No new version. No significant effect on results.    
 
 ______
 
@@ -182,7 +182,7 @@ PropagAtE comes with a couple of very simple optional arguments. At any point yo
 
 * `-e`: minimum effect size for significance by Cohen's *d* test. The default is `0.75` and the minimum is `0.6`. Values greater than `0.75` will represent a more significant difference in a prophage:host coverage ratio. Setting values below `0.75` may introduce false identifications (i.e., dormant prophages identified as active) whereas setting the value too high (e.g., `1.5`) may reduce identification of active prophages.  
 
-* `-c`: minimum prophage:host coverage ratio for significance. The default is `1.75` and the minimum is `1.5`. Setting values below `1.75` may introduce false identifications (i.e., dormant prophages identified as active) whereas setting the value too high (e.g., `3`) may reduce identification of active prophages.  
+* `-c`: minimum prophage:host coverage ratio for significance. The default is `1.65` and the minimum is `1.5`. Setting values below `1.65` may introduce false identifications (i.e., dormant prophages identified as active) whereas setting the value too high (e.g., `3`) may reduce identification of active prophages.  
 
 *Likely unused optional arguments*
 
