@@ -33,7 +33,7 @@ def do_setup(v, d):
         install_requires=['numpy>=1.17.0', 'pysam>=0.15', 'numba>=0.50.0'],
         keywords=["bioinformatics", "metagenomics", "virus", "prophage"],
         python_requires=">=3.6",
-        scripts=['Propagate/PropagAtE', 'Propagate/modules.py'],
+        scripts=['Propagate/Propagate', 'Propagate/modules.py'],
         packages=setuptools.find_packages(),
         license='GPLv3',
         long_description=d

@@ -120,10 +120,11 @@ PropagAtE is built for efficiently running on metagenomes, individual isolates g
 ### Installation/Download
 
 1. `git clone https://github.com/AnantharamanLab/PropagAtE`  
+   (optional) create a conda environment and activate it before proceeding to pip install  
 2. `cd PropagAtE` 
-3. `pip install -e .`   *&#8592; NOTE*: don't forget the dot (`pip install -e [dot]`)  
+3. `pip install .`   *&#8592; NOTE*: don't forget the dot (`pip install [dot]`)  
 
-Installing with pip is optional but suggested. Using pip will collect dependencies and add PropagAtE (`Propagate` executable) to your system PATH. Without pip, PropagAtE can still be executed directly from the git clone, just ensure executable permissions (`chmod +x Propagate/*`). Note that a new folder (`PropagAtE.egg-info`) should appear after installing with pip.  
+Installing with pip is optional but suggested. Using pip will collect dependencies and add PropagAtE (`Propagate` executable) to your system PATH. Without pip, PropagAtE can still be executed directly from the git clone, just ensure executable permissions (`chmod +x Propagate/*` from within the main PropagAtE directory). Note that a new folder (`PropagAtE.egg-info`) should appear after installing with pip.  
 
 ### Testing PropagAtE
 
