@@ -1,0 +1,30 @@
+Command:    ../../Propagate -f AE017333_partial_genome.fasta -b AE017333_partial_genome.sorted.bam -v manual_prophage_coordinates_AE017333.tsv -t 1 --clean
+
+Date:       2021-12-02
+Time:       23:03:44
+Program:    PropagAtE v1.1.0
+Time (min) |  Log                                                   
+--------------------------------------------------------------------
+0.0         Generating a list of all prophage regions
+0.0         Number of prophage regions identified: 1
+0.0         Number of unique host regions identified: 1
+0.0         Extracting coverage and performing statistical analyses
+0.1         Analysis finished
+
+
+Results file:      PropagAtE_results_manual_prophage_coordinates_AE017333.tsv
+Active prophages:  1
+
+                                                               ##
+                                                             ##  ##
+                                                           ##      ##
+######   ##  ##     ##     #######   ######    #####       ##      ##
+##  ##   ##  ##   ##  ##   ##        ##       ##             ##  ##
+######   ######   ######   ##  ###   ######    ###             ##
+##       ##  ##   ##  ##   ##   ##   ##           ##           ##
+##       ##  ##   ##  ##   #######   ######   #####            ##
+                                                            #  ##  #
+                                                           # # ## # #
+                                                          #   #  #   #
+                                                         #            #
+

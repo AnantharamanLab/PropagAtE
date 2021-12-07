@@ -1,0 +1,288 @@
+#! /usr/bin/env python3
+# Author: Kristopher Kieft, UW-Madison
+# kieft@wisc.edu
+
+# PropagAtE: Prophage Activity Estimator
+# Version: v1.1.0
+# Release date: January 2022
+
+
+try:
+    import warnings
+    warnings.filterwarnings("ignore")
+    import argparse
+    import subprocess
+    import sys
+    import time
+    import datetime
+    import logging
+    import os
+    import modules
+except Exception as e:
+    sys.stderr.write("\nError: please verify dependancy imports are installed and up to date:\n\n")
+    sys.stderr.write(str(e) + "\n\n")
+    exit(1)
+
+# Set up variables
+start = time.time()
+
+descript = '''
+    PropagAtE: Prophage Activity Estimator (v1.1.0)
+    
+    Using a prophage coordinates file, fasta file and coverage information,
+    calculate if prophages were active in the given sample.
+    Prophages should be connected (integrated) to the host scaffold/genome.
+
+    Example: input paired reads and run Bowtie2
+    Propagate -f scaffolds.fasta -r forward.fastq reverse.fastq -o output_folder -v prophage_coordinates.tsv -t threads
+
+    Example: input BAM alignment file
+    Propagate -f scaffolds.fasta -b alignment.bam -o output_folder -v prophage_coordinates.tsv
+
+'''
+
+propagate = argparse.ArgumentParser(description=descript, formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS)
+propagate.add_argument('--version', action='version', version='PropagAtE v1.1.0')
+required = propagate.add_argument_group('REQUIRED')
+coverage = propagate.add_argument_group('PICK ONE')
+common = propagate.add_argument_group('COMMON')
+edit = propagate.add_argument_group('EDIT METHODS')
+
+# Input / Output
+required.add_argument('-f', metavar='', type=str, nargs=1, required = True, help='input genomes/scaffolds (can have extra sequences in file)')
+required.add_argument('-v', metavar='', type=str, nargs=1, required = True, help='VIBRANT "integrated_prophage_coordinates" file or custom file (see README)')
+#
+coverage.add_argument('-b', metavar='', type=str, nargs=1, default = [''], help='input BAM sequence alignment file')
+coverage.add_argument('-s', metavar='', type=str, nargs=1, default = [''], help='input SAM sequence alignment file')
+coverage.add_argument('-r', metavar='', type=str, nargs=2, default = ['',''], help='input paired read files separated by a space (forward reverse)')
+coverage.add_argument('-i', metavar='', type=str, nargs=1, default = [''], help='input interleaved paired read file')
+coverage.add_argument('-u', metavar='', type=str, nargs=1, default = [''], help='input unpaired read file')
+#
+common.add_argument('-o', metavar='', type=str, nargs=1, default = [''], help='name of output folder [default = Propagate_results_(-v)]')
+common.add_argument('-t', metavar='', type=str, nargs=1, default = ['1'], help='threads [1]')
+#
+edit.add_argument('-p', metavar='', type=str, nargs=1, default = ['0.97'], help='minimum percent identity per aligned read for calculating coverage [0.97]')
+edit.add_argument('-e', metavar='', type=str, nargs=1, default = ['0.70'], help="minimum effect size for significance by Cohen's d test [default=0.70, minimum=0.60]")
+edit.add_argument('-c', metavar='', type=str, nargs=1, default = ['2.0'], help="minimum prophage:host coverage ratio for significance [default=2.0, minimum=1.50]")
+edit.add_argument('--mask', metavar='', type=str, nargs=1, default = ['150'], help="mask coverage values <int> bases on each end of a scaffold [150]")
+edit.add_argument('--min', metavar='', type=str, nargs=1, default = ['1.0'], help="minimum average coverage to consider prophage present and for --depth [1.0]")
+edit.add_argument('--depth', metavar='', type=str, nargs=1, default = ['0.5'], help="minimum depth of coverage as fraction of bases >= minimum coverage (--min) [0.5]")
+edit.add_argument('--clean', action='store_true', help='remove generated SAM, unsorted BAM, Bowtie2 index. Retain user input files and sorted BAM [off]')
+
+# Parse arguments
+args = propagate.parse_args()
+samfile = str(args.s[0])
+bamfile = str(args.b[0])
+clean_bam = False
+if bamfile:
+    clean_bam = True
+fasta = str(args.f[0])
+forward = str(args.r[0])
+reverse = str(args.r[1])
+if forward and not reverse:
+    sys.stderr.write("\nA reverse read set must be provided with the forward. Exiting.\n")
+    exit(1)
+interleaved = str(args.i[0])
+unpaired = str(args.u[0])
+threads = str(args.t[0])
+vibe = str(args.v[0])
+try:
+    temp = vibe.rsplit("/",1)[1]
+    u = temp.rsplit(".",1)[0]
+except Exception:
+    u = vibe.rsplit(".",1)[0]
+mask = int(args.mask[0])
+min_cov = float(args.min[0])
+min_depth = float(args.depth[0])
+effect = float(args.e[0])
+read_id = float(args.p[0])
+ratio_cutoff = float(args.c[0])
+outpath = str(args.o[0])
+if not outpath:
+    outpath = f'PropagAtE_results_{u}/'
+if outpath[-1] != '/':
+    outpath += '/'
+
+# make sure inputs are correct
+exist = [
+    modules.does_exist(outpath, 'output folder'),
+    modules.not_exist(fasta, 'fasta'),
+    modules.not_exist(vibe, 'coordinates')
+]
+
+if any(exist):
+    exit(1)
+
+vibe_header = modules.prophages_check(vibe)
+if not vibe_header:
+    exit(1)
+
+# verify inputs
+check = [samfile, bamfile, forward, interleaved, unpaired]
+check = [c for c in check if c != '']
+if len(check) > 1 or not check:
+    sys.stderr.write(f"\nOnly one input file (-s, -b, -r, -i, -u) is allowed. {len(check)} provided. Exiting.\n")
+    exit(1)
+
+if forward and reverse:
+    if not (forward.endswith('.fastq') or forward.endswith('.fastq.gz')) and (reverse.endswith('.fastq') or reverse.endswith('.fastq.gz')):
+        sys.stderr.write("\nError: Provided reads files must both have the extension .fastq or .fastq.gz. Exiting.\n")
+        exit(1)
+if interleaved:
+    if not interleaved.endswith('.fastq') or interleaved.endswith('.fastq.gz'):
+        sys.stderr.write("\nError: Provided reads file must have the extension .fastq or .fastq.gz. Exiting.\n")
+        exit(1)
+if unpaired:
+    if not unpaired.endswith('.fastq') or unpaired.endswith('.fastq.gz'):
+        sys.stderr.write("\nError: Provided reads file must have the extension .fastq or .fastq.gz. Exiting.\n")
+        exit(1)
+
+if samfile:
+    if modules.not_exist(samfile, 'sam file'):
+        exit(1)
+    if not bamfile.endswith('.sam'):
+        sys.stderr.write("\nError: Provided sam file must have the extension .sam. Exiting.\n")
+        exit(1)
+if bamfile:
+    if modules.not_exist(bamfile, 'bam file'):
+        exit(1)
+    if not bamfile.endswith('.bam'):
+        sys.stderr.write("\nError: Provided bam file must have the extension .bam. Exiting.\n")
+        exit(1)
+
+if effect < 0.6:
+    sys.stderr.write("\nError: Cohen's d effect size (-e) should not be set below 0.6. Exiting.\n")
+    exit(1)
+if min_depth > 1:
+    sys.stderr.write("\nError: depth (--depth) should be a decimal value below 1. Exiting.\n")
+    exit(1)
+if ratio_cutoff < 1.5:
+    sys.stderr.write("\nError: ratio cutoff (-c) should not be set below 1.5. Exiting.\n")
+    exit(1)
+if read_id > 1:
+    sys.stderr.write("\nError: percent identity (-p) should be a decimal value below 1. Exiting.\n")
+    exit(1)
+read_id = 1.0 - read_id
+
+
+# set up folder and log
+subprocess.run(f'mkdir {outpath}', shell=True)
+if outpath.count('/') > 1:
+    base = outpath.rsplit("/",2)[1]
+else:
+    base = outpath[:-1]
+outfile = f'{outpath}{base}.tsv'
+logfilename = f'{outpath}{base}.log'
+logging.basicConfig(filename=logfilename, level=logging.INFO, format='%(message)s')
+
+##### ----------------------------------------------------------------------------------------------------------------------- #####
+logging.info("Command:    %s" % ' '.join(sys.argv))
+logging.info("")
+logging.info("Date:       %s" % str(datetime.date.today()))
+logging.info("Time:       %s" % str(datetime.datetime.now().time()).rsplit(".",1)[0])
+logging.info("Program:    PropagAtE v1.1.0\n")
+
+logging.info("Time (min) |  Log                                                   ")
+logging.info("--------------------------------------------------------------------")
+
+if vibe_header == 'no prophages':
+    logging.info("%s         No prophages were found in the input coordinates file" % str(round((time.time() - float(start))/60,1)))
+    logging.info("%s         Analysis finished" % str(round((time.time() - float(start))/60,1)))
+    logging.info("")
+    logging.info("")
+    logging.info("Results file:      %s" % outfile.replace(outpath,''))
+    logging.info("Active prophages:   0")
+    logging.info("")
+
+# check for spaces in fasta
+spaces = False
+try:
+    check = subprocess.check_output(f'grep -c " " {fasta}', shell=True)
+    check = int(spaces.strip("'").strip("b"))
+    if check > 0:
+        spaces = True
+except Exception:
+    spaces = True
+
+# If input is reads/fasta run Bowtie2
+if forward or interleaved or unpaired:
+    logging.info("%s         Reads input identified, using %s threads to run Bowtie2." % (str(round((time.time() - float(start))/60,1)),threads))
+    
+    try:
+        subprocess.check_output("which bowtie2", shell=True)
+    except Exception:
+        sys.stderr.write("\nError: Bowtie2 does not appear to be installed or is not in the system's PATH. Exiting.\n")
+        logging.info("\nError: Bowtie2 does not appear to be installed or is not in the system's PATH. Exiting.\n")
+        exit(1)
+    try:
+        temp = fasta.rsplit("/",1)[1]
+        base = temp.rsplit(".",1)[0]
+    except Exception:
+        base = fasta.rsplit(".",1)[0]
+
+    build = modules.bowtie2_build(fasta, base, outpath, spaces, u)
+    if forward:
+        if not os.path.exists(forward) or not os.path.exists(reverse):
+            sys.stderr.write("\nError: the forward and/or reverse reads files do not exist. Exiting.\n\n")
+            exit(1)
+        modules.run_bowtie2_paired(base, outpath, threads, forward, reverse)
+    elif interleaved:
+        if not os.path.exists(forward):
+            sys.stderr.write("\nError: the forward and/or reverse reads files do not exist. Exiting.\n\n")
+            exit(1)
+        modules.run_bowtie2_interleaved(base, outpath, threads, interleaved)
+    elif unpaired:
+        modules.run_bowtie2_unpaired(base, outpath, threads, unpaired)
+    bamfile = modules.post_bowtie2(outpath, base, args.clean, u, build, threads)
+
+if samfile:
+    logging.info("%s         Converting SAM file to BAM format" % str(round((time.time() - float(start))/60,1)))
+    bamfile = modules.sam_bam(samfile, outpath, threads)
+
+if bamfile:
+    logging.info("%s         Checking if BAM file needs to be sorted" % str(round((time.time() - float(start))/60,1)))
+    check_bam, bamfile = modules.sort_bam(bamfile, outpath, threads, args.clean, clean_bam)
+    if not check_bam:
+        sys.stderr.write("\nError: The SAM/BAM file appears to be empty, was not converted properly, or no reads aligned. Exiting.\n")
+        logging.info("\nError: The SAM/BAM file appears to be empty, was not converted properly, or no reads aligned. Exiting.\n")
+        exit(1)
+
+# 'bamfile' is now from read alignment, sam, unsorted bam, or direct input
+
+# Read in prophage coordinate data
+logging.info("%s         Generating a list of all prophage regions" % str(round((time.time() - float(start))/60,1)))
+check, prophage_dict, prophage_dict_frags, genomes_full, prophages, prophage_lengths = modules.process_coordinates_file(vibe, spaces, vibe_header)
+
+number_hosts = len(genomes_full)
+logging.info("%s         Number of prophage regions identified: %s" % (str(round((time.time() - float(start))/60,1)),prophages))
+logging.info("%s         Number of unique host regions identified: %s" % (str(round((time.time() - float(start))/60,1)),number_hosts))
+
+# process sam/bam files
+logging.info("%s         Extracting coverage and performing statistical analyses" % str(round((time.time() - float(start))/60,1)))
+lengths = modules.get_lengths(fasta, spaces, genomes_full)
+total = modules.extract_coverage(bamfile, read_id, lengths, mask, outfile, prophage_dict, effect, ratio_cutoff, prophage_dict_frags, prophage_lengths, min_depth, min_cov, args.clean, spaces)
+
+logging.info("%s         Analysis finished" % str(round((time.time() - float(start))/60,1)))
+logging.info("")
+logging.info("")
+logging.info("Results file:      %s" % outfile.replace(outpath,''))
+logging.info("Active prophages:  %s" % total)
+logging.info("")
+logging.info('                                                               ##')
+logging.info('                                                             ##  ##')
+logging.info('                                                           ##      ##')
+logging.info('######   ##  ##     ##     #######   ######    #####       ##      ##')
+logging.info('##  ##   ##  ##   ##  ##   ##        ##       ##             ##  ##')
+logging.info('######   ######   ######   ##  ###   ######    ###             ##')
+logging.info('##       ##  ##   ##  ##   ##   ##   ##           ##           ##')
+logging.info('##       ##  ##   ##  ##   #######   ######   #####            ##')
+logging.info('                                                            #  ##  #')
+logging.info('                                                           # # ## # #')
+logging.info('                                                          #   #  #   #')
+logging.info('                                                         #            #')
+logging.info("")
+
+
+#
+#
+#
