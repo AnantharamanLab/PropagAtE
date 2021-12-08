@@ -1,0 +1,33 @@
+Command:    /opt/anaconda3/bin/Propagate -f example_sequence.fasta -v VIBRANT_integrated_prophage_coordinates_example.tsv -r sample_forward_reads.fastq.gz sample_reverse_reads.fastq.gz -o test -t 2
+
+Date:       2021-12-07
+Time:       15:26:56
+Program:    PropagAtE v1.1.0
+
+Time (min) |  Log                                                   
+--------------------------------------------------------------------
+0.0         Reads input identified, using 2 threads to run Bowtie2.
+0.0         Checking if BAM file needs to be sorted
+0.0         Generating a list of all prophage regions
+0.0         Number of prophage regions identified: 1
+0.0         Number of unique host regions identified: 1
+0.0         Extracting coverage and performing statistical analyses
+0.1         Analysis finished
+
+
+Results file:      test.tsv
+Active prophages:  0
+
+                                                               ##
+                                                             ##  ##
+                                                           ##      ##
+######   ##  ##     ##     #######   ######    #####       ##      ##
+##  ##   ##  ##   ##  ##   ##        ##       ##             ##  ##
+######   ######   ######   ##  ###   ######    ###             ##
+##       ##  ##   ##  ##   ##   ##   ##           ##           ##
+##       ##  ##   ##  ##   #######   ######   #####            ##
+                                                            #  ##  #
+                                                           # # ## # #
+                                                          #   #  #   #
+                                                         #            #
+

@@ -125,16 +125,23 @@ if len(check) > 1 or not check:
     exit(1)
 
 if forward and reverse:
-    if not (forward.endswith('.fastq') or forward.endswith('.fastq.gz')) and (reverse.endswith('.fastq') or reverse.endswith('.fastq.gz')):
-        sys.stderr.write("\nError: Provided reads files must both have the extension .fastq or .fastq.gz. Exiting.\n")
+    if not forward.endswith('.fastq') and not forward.endswith('.fastq.gz'): 
+        sys.stderr.write("\nError: Provided paired reads files must both have the extension .fastq or .fastq.gz. Exiting.\n")
+        sys.stderr.write(f"{forward}\n")
+        exit(1)
+    if not reverse.endswith('.fastq') and not reverse.endswith('.fastq.gz'):
+        sys.stderr.write("\nError: Provided paired reads files must both have the extension .fastq or .fastq.gz. Exiting.\n")
+        sys.stderr.write(f"{reverse}\n\n")
         exit(1)
 if interleaved:
-    if not interleaved.endswith('.fastq') or interleaved.endswith('.fastq.gz'):
-        sys.stderr.write("\nError: Provided reads file must have the extension .fastq or .fastq.gz. Exiting.\n")
+    if not interleaved.endswith('.fastq') and not interleaved.endswith('.fastq.gz'):
+        sys.stderr.write("\nError: Provided interleaved reads file must have the extension .fastq or .fastq.gz. Exiting.\n")
+        sys.stderr.write(f"{interleaved}\n\n")
         exit(1)
 if unpaired:
-    if not unpaired.endswith('.fastq') or unpaired.endswith('.fastq.gz'):
-        sys.stderr.write("\nError: Provided reads file must have the extension .fastq or .fastq.gz. Exiting.\n")
+    if not unpaired.endswith('.fastq') and not unpaired.endswith('.fastq.gz'):
+        sys.stderr.write("\nError: Provided unpaired reads file must have the extension .fastq or .fastq.gz. Exiting.\n")
+        sys.stderr.write(f"{unpaired}\n\n")
         exit(1)
 
 if samfile:
@@ -227,11 +234,14 @@ if forward or interleaved or unpaired:
             exit(1)
         modules.run_bowtie2_paired(base, outpath, threads, forward, reverse)
     elif interleaved:
-        if not os.path.exists(forward):
-            sys.stderr.write("\nError: the forward and/or reverse reads files do not exist. Exiting.\n\n")
+        if not os.path.exists(interleaved):
+            sys.stderr.write("\nError: the interleaved reads file does not exist. Exiting.\n\n")
             exit(1)
         modules.run_bowtie2_interleaved(base, outpath, threads, interleaved)
     elif unpaired:
+        if not os.path.exists(unpaired):
+            sys.stderr.write("\nError: the unpaired reads file does not exist. Exiting.\n\n")
+            exit(1)
         modules.run_bowtie2_unpaired(base, outpath, threads, unpaired)
     bamfile = modules.post_bowtie2(outpath, base, args.clean, u, build, threads)
 

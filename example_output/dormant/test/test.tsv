@@ -1,0 +1,2 @@
+prophage	host	active	CohenD	prophage-host_ratio	mean_difference	prophage_len	prophage_mean_cov	prophage_median_cov	prophage_sd_cov	prophage_cov_depth	host_len	host_mean_cov	host_median_cov	host_sd_cov
+example_sequence_fragment_2	example_sequence	dormant	0.38055621021516517	1.2667217906773467	1.4723042845389536	79005	6.992304284538953	6.0	4.172387042463089	0.9871527118536801	242080	5.52	5.0	3.5393156941510524
