@@ -61,9 +61,8 @@ def quick_stats(depth, start, stop, min_cov, all_phages, l, host_depth):
     return a,m,s,d,all_phages,host_depth
 
 @jit(nopython=True)
-def host_stats(depth, all_phages, length):
-    non_nan = length-all_phages
-    if non_nan >= 1000:
+def host_stats(depth):
+    if depth.size >= 1000:
         a = np.nanmean(depth)
         m = np.nanmedian(depth)
         s = np.nanstd(depth)
@@ -85,7 +84,8 @@ def coverage_stats(depth, genome, prophage_dict, prophage_lengths, min_cov, leng
         a,m,s,d,all_phages,host_depth = quick_stats(depth, start, stop, min_cov, all_phages, l, host_depth)
         phage_covs[phage] = (a,m,s,l,d)
 
-    a,m,s = host_stats(host_depth, all_phages, length) # host
+    host_depth_filter = host_depth[~np.isnan(host_depth)]
+    a,m,s = host_stats(host_depth_filter) # host
     return phage_covs, a, m, s
 
 @jit(nopython=True)
