@@ -65,8 +65,8 @@ edit.add_argument('-p', metavar='', type=str, nargs=1, default = ['0.97'], help=
 edit.add_argument('-e', metavar='', type=str, nargs=1, default = ['0.70'], help="minimum effect size for significance by Cohen's d test [default=0.70, minimum=0.60]")
 edit.add_argument('-c', metavar='', type=str, nargs=1, default = ['2.0'], help="minimum prophage:host coverage ratio for significance [default=2.0, minimum=1.50]")
 edit.add_argument('--mask', metavar='', type=str, nargs=1, default = ['150'], help="mask coverage values <int> bases on each end of a scaffold [150]")
-edit.add_argument('--min', metavar='', type=str, nargs=1, default = ['1.0'], help="minimum average coverage to consider prophage present and for --depth [1.0]")
-edit.add_argument('--depth', metavar='', type=str, nargs=1, default = ['0.5'], help="minimum depth of coverage as fraction of bases >= minimum coverage (--min) [0.5]")
+edit.add_argument('--min', metavar='', type=str, nargs=1, default = ['1.0'], help="minimum average coverage to consider prophage present and for --breadth [1.0]")
+edit.add_argument('--breadth', metavar='', type=str, nargs=1, default = ['0.5'], help="minimum breadth of coverage as fraction of bases >= minimum coverage (--min) [0.5]")
 edit.add_argument('--clean', action='store_true', help='remove generated SAM, unsorted BAM, Bowtie2 index. Retain user input files and sorted BAM [off]')
 
 # Parse arguments
@@ -93,7 +93,7 @@ except Exception:
     u = vibe.rsplit(".",1)[0]
 mask = int(args.mask[0])
 min_cov = float(args.min[0])
-min_depth = float(args.depth[0])
+min_breadth = float(args.breadth[0])
 effect = float(args.e[0])
 read_id = float(args.p[0])
 ratio_cutoff = float(args.c[0])
@@ -160,14 +160,14 @@ if bamfile:
 if effect < 0.6:
     sys.stderr.write("\nError: Cohen's d effect size (-e) should not be set below 0.6. Exiting.\n")
     exit(1)
-if min_depth > 1:
-    sys.stderr.write("\nError: depth (--depth) should be a decimal value below 1. Exiting.\n")
+if min_breadth > 1:
+    sys.stderr.write("\nError: breadth (--breadth) should be a decimal value <= 1. Exiting.\n")
     exit(1)
 if ratio_cutoff < 1.5:
     sys.stderr.write("\nError: ratio cutoff (-c) should not be set below 1.5. Exiting.\n")
     exit(1)
 if read_id > 1:
-    sys.stderr.write("\nError: percent identity (-p) should be a decimal value below 1. Exiting.\n")
+    sys.stderr.write("\nError: percent identity (-p) should be a decimal value <= 1. Exiting.\n")
     exit(1)
 read_id = 1.0 - read_id
 
@@ -270,7 +270,7 @@ logging.info("%s         Number of unique host regions identified: %s" % (str(ro
 # process sam/bam files
 logging.info("%s         Extracting coverage and performing statistical analyses" % str(round((time.time() - float(start))/60,1)))
 lengths = modules.get_lengths(fasta, spaces, genomes_full)
-total = modules.extract_coverage(bamfile, read_id, lengths, mask, outfile, prophage_dict, effect, ratio_cutoff, prophage_dict_frags, prophage_lengths, min_depth, min_cov, args.clean, spaces)
+total = modules.extract_coverage(bamfile, read_id, lengths, mask, outfile, prophage_dict, effect, ratio_cutoff, prophage_dict_frags, prophage_lengths, min_breadth, min_cov, args.clean, spaces)
 
 logging.info("%s         Analysis finished" % str(round((time.time() - float(start))/60,1)))
 logging.info("")

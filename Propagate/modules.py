@@ -301,7 +301,7 @@ def get_lengths(fasta, spaces, genomes_full):
     return lengths
 
 
-def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect, ratio_cutoff, prophage_dict_frags, prophage_lengths, min_depth, min_cov, clean, spaces):
+def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect, ratio_cutoff, prophage_dict_frags, prophage_lengths, min_breadth, min_cov, clean, spaces):
     '''
     Code mainly from vRhyme (same author).
     Extract coverage information from BAM file.
@@ -336,7 +336,7 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
                             depth[:mask_f] = np.nan
                             depth[mask_r:] = np.nan
                         prophage_covs, avg, med, sd = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
-                        written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_depth, min_cov, spaces)
+                        written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
                         depth = np.zeros(length)
                 except NameError:
                     # prev not defined
@@ -362,7 +362,7 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
                 depth[:mask_f] = np.nan
                 depth[mask_r:] = np.nan
             prophage_covs, avg, med, sd = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
-            written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_depth, min_cov, spaces)
+            written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
             depth = None
     else: # no mismatches
         for x in bamfile.fetch(until_eof=True):
@@ -375,7 +375,7 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
                             depth[:mask_f] = np.nan
                             depth[mask_r:] = np.nan
                         prophage_covs, avg, med, sd = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
-                        written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_depth, min_cov, spaces)
+                        written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
                         depth = np.zeros(length)
                 except NameError:
                     depth = np.zeros(length)
@@ -392,7 +392,7 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
                 depth[:mask_f] = np.nan
                 depth[mask_r:] = np.nan
             prophage_covs, avg, med, sd = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
-            written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_depth, min_cov, spaces)
+            written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
             depth = None
 
     bamfile.close()
@@ -417,7 +417,7 @@ def cohenD(phage_mean, phage_sd, host_mean, host_sd):
     return d
 
 @jit(nopython=True)
-def activity(phage_mean,cov_depth,avg,d,effect,ratio_cutoff,min_depth,min_cov,total):
+def activity(phage_mean,cov_depth,avg,d,effect,ratio_cutoff,min_breadth,min_cov,total):
     '''
     Determine activity based on cutoffs
     '''
@@ -428,14 +428,14 @@ def activity(phage_mean,cov_depth,avg,d,effect,ratio_cutoff,min_depth,min_cov,to
     diff = phage_mean-avg
     active = 'dormant'
     if d >= effect and ratio >= ratio_cutoff:
-        if cov_depth >= min_depth and phage_mean >= min_cov:
+        if cov_depth >= min_breadth and phage_mean >= min_cov:
             active = 'active'
             total += 1
         else:
             active = 'ambiguous'
     return active,total,diff,ratio
 
-def write_coverages(outfile, prophage_covs, host, avg, med, sd, length, effect, ratio_cutoff, written, total, min_depth, min_cov, spaces):
+def write_coverages(outfile, prophage_covs, host, avg, med, sd, length, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces):
     '''
     Within the BAM loop.
     Perform statistical analyses and write out final results.
@@ -444,7 +444,7 @@ def write_coverages(outfile, prophage_covs, host, avg, med, sd, length, effect, 
         for key,p in prophage_covs.items():
             phage_mean,phage_med,phage_sd,l,cov_depth = p
             d = cohenD(phage_mean, phage_sd, avg, sd)
-            active,total,diff,ratio = activity(phage_mean,cov_depth,avg,d,effect,ratio_cutoff,min_depth,min_cov,total)
+            active,total,diff,ratio = activity(phage_mean,cov_depth,avg,d,effect,ratio_cutoff,min_breadth,min_cov,total)
             if spaces:
                 key = key.replace("~!!~", " ")
             output.write(f'{key}\t{host}\t{active}\t{d}\t{ratio}\t{diff}\t{l}\t{phage_mean}\t{phage_med}\t{phage_sd}\t{cov_depth}\t{length}\t{avg}\t{med}\t{sd}\n')
