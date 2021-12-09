@@ -48,7 +48,7 @@ ______
   * Streamline code to improve runtime
   * Remove Mann-Whitney test
   * Edit and add flag options
-     * Add depth of coverage cutoff
+     * Add breadth of coverage cutoff
      * Add minimum coverage cutoff
      * -o specifies an output folder
   * Python dependencies have been modified
@@ -184,8 +184,8 @@ These flags are often not used. However, they can be used to modify the method o
 * `-e`: minimum effect size for significance by Cohen's *d* test. The default is `0.70` and the minimum is `0.60`. Values greater than `0.70` will represent a more significant difference in a prophage:host coverage ratio. Setting values below `0.75` may introduce false identifications (i.e., dormant prophages identified as active) whereas setting the value too high (e.g., `1.5`) may reduce identification of active prophages.  
 * `-c`: minimum prophage:host coverage ratio for significance. The default is `2.0` and the minimum is `1.5`. Setting values below `2.0` may introduce false identifications (i.e., dormant prophages identified as active) whereas setting the value too high (e.g., `10`) may reduce identification of active prophages. 
 * `--mask`: mask coverage values <int> bases on each end of a scaffold. The default is 150 bp. This will attempt to even out the coverage at scaffold ends where short reads are less likely to align properly/completely. This option pertains to any coverage input (reads or SAM/BAM).
-* `--min`: minimum average coverage to consider a prophage present and for --depth. The default is 1.0x coverage. Prophage with an average coverage below this threshold will not be active regardless of host coverage. See `--depth` for another function of this flag. 
-* `--depth`: minimum depth of coverage as fraction of bases >= minimum coverage (`--min`). The default is 0.50 (50%). Example: with `--min 1.0 --depth 0.50`, if > 50% of a prophage genome has a coverage < 1.0, regardless of the average coverage, it will not be considered as active. This helps to ensure uneven and misleading alignments do not result in false positives. 
+* `--min`: minimum average coverage to consider a prophage present and for --breadth. The default is 1.0x coverage. Prophage with an average coverage below this threshold will not be active regardless of host coverage. See `--breadth` for another function of this flag. 
+* `--breadth`: minimum breadth of coverage as fraction of bases >= minimum coverage (`--min`). The default is 0.50 (50%). Example: with `--min 1.0 --breadth 0.50`, if > 50% of a prophage genome has a coverage < 1.0, regardless of the average coverage, it will not be considered as active. This helps to ensure uneven and misleading alignments do not result in false positives. 
 * `--clean`: use this setting to remove any generated SAM, unsorted BAM and/or Bowtie2 index files. All user input data files (regardless of format) and sorted BAM files will always be retained. SAM/BAM files can be very large, and Bowtie2 index files are typically temporary. Off by default.
 
 ## Output Explanations  <a name="out"></a>
@@ -197,7 +197,7 @@ PropagAtE will always generate two files: the results tab-separated spreadsheet 
 * Results file: The results spreadsheet contains the finalize active versus dormant results as well as all relevant metrics and statistics. The following are column names and explanations of the results file:
   1. prophage: the name of the prophage
   2. host: the name of the host
-  3. active: "active" indicates and active prophage in the lytic stage of infection. "dormant" indicates a dormant prophage in the lysogenic stage of infection. "ambiguous" indicates the prophage passed the `-e` and `-c` cutoffs but not the `--min` or `--depth` cutoffs, generally considering it as "not active" but lacking evidence to call it "dormant". 
+  3. active: "active" indicates and active prophage in the lytic stage of infection. "dormant" indicates a dormant prophage in the lysogenic stage of infection. "ambiguous" indicates the prophage passed the `-e` and `-c` cutoffs but not the `--min` or `--breadth` cutoffs, generally considering it as "not active" but lacking evidence to call it "dormant". 
   4. CohenD: the Cohen's *d* effect size for the prophage and host coverages
   5. prophage-host_ratio: the prophage:host coverage ratio (prophage mean divided by host mean)
   6. mean_difference: the difference between the prophage and host coverages (prophage mean minus host mean)
@@ -205,7 +205,7 @@ PropagAtE will always generate two files: the results tab-separated spreadsheet 
   8. prophage_mean_cov: the mean (average) coverage of the prophage region
   9.  prophage_median_cov: the median coverage value of the prophage region
   10. prophage_sd_cov: the standard deviation of the prophage region coverage values
-  11. prophage_cov_depth: the depth of coverage of the prophage region
+  11. prophage_cov_breadth: the breadth of coverage of the prophage region
   12. host_len: the length in nucleotides of the host region
   13. host_mean_cov: the mean (average) coverage of the host region
   14. host_median_cov: the median coverage value of the host region

@@ -307,7 +307,7 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
     Extract coverage information from BAM file.
     '''
     with open(outfile, 'w') as output:
-        output.write("prophage\thost\tactive\tCohenD\tprophage-host_ratio\tmean_difference\tprophage_len\tprophage_mean_cov\tprophage_median_cov\tprophage_sd_cov\tprophage_cov_depth\thost_len\thost_mean_cov\thost_median_cov\thost_sd_cov\n")
+        output.write("prophage\thost\tactive\tCohenD\tprophage-host_ratio\tmean_difference\tprophage_len\tprophage_mean_cov\tprophage_median_cov\tprophage_sd_cov\tprophage_cov_breadth\thost_len\thost_mean_cov\thost_median_cov\thost_sd_cov\n")
     written = []
     total = 0
 
