@@ -62,13 +62,14 @@ def quick_stats(depth, start, stop, min_cov, all_phages, l, host_depth):
 
 @jit(nopython=True)
 def host_stats(depth):
-    if depth.size >= 1000:
+    eff_host = depth.size
+    if eff_host > 0:
         a = np.nanmean(depth)
         m = np.nanmedian(depth)
         s = np.nanstd(depth)
-        return a,m,s
+        return a,m,s,eff_host
     else:
-        return 0,0,0
+        return 0,0,0,0
 
 def coverage_stats(depth, genome, prophage_dict, prophage_lengths, min_cov, length):
     '''
@@ -85,8 +86,8 @@ def coverage_stats(depth, genome, prophage_dict, prophage_lengths, min_cov, leng
         phage_covs[phage] = (a,m,s,l,d)
 
     host_depth_filter = host_depth[~np.isnan(host_depth)]
-    a,m,s = host_stats(host_depth_filter) # host
-    return phage_covs, a, m, s
+    a,m,s,eff_host = host_stats(host_depth_filter) # host
+    return phage_covs, a, m, s, eff_host
 
 @jit(nopython=True)
 def add_depth(depth, start, end, ed, rl, read_id):
@@ -335,8 +336,8 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
                         if mask_f:
                             depth[:mask_f] = np.nan
                             depth[mask_r:] = np.nan
-                        prophage_covs, avg, med, sd = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
-                        written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
+                        prophage_covs, avg, med, sd, eff_host = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
+                        written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, eff_host, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
                         depth = np.zeros(length)
                 except NameError:
                     # prev not defined
@@ -361,8 +362,8 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
             if mask_f:
                 depth[:mask_f] = np.nan
                 depth[mask_r:] = np.nan
-            prophage_covs, avg, med, sd = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
-            written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
+            prophage_covs, avg, med, sd, eff_host = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
+            written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, eff_host, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
             depth = None
     else: # no mismatches
         for x in bamfile.fetch(until_eof=True):
@@ -374,8 +375,8 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
                         if mask_f:
                             depth[:mask_f] = np.nan
                             depth[mask_r:] = np.nan
-                        prophage_covs, avg, med, sd = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
-                        written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
+                        prophage_covs, avg, med, sd, eff_host = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
+                        written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, eff_host, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
                         depth = np.zeros(length)
                 except NameError:
                     depth = np.zeros(length)
@@ -391,8 +392,8 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
             if mask_f:
                 depth[:mask_f] = np.nan
                 depth[mask_r:] = np.nan
-            prophage_covs, avg, med, sd = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
-            written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, length, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
+            prophage_covs, avg, med, sd, eff_host = coverage_stats(depth, prev, prophage_dict, prophage_lengths, min_cov, length)
+            written, total = write_coverages(outfile, prophage_covs, prev, avg, med, sd, eff_host, effect, ratio_cutoff, written, total, min_breadth, min_cov, spaces)
             depth = None
 
     bamfile.close()
