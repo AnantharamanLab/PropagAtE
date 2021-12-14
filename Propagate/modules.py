@@ -276,7 +276,7 @@ def process_coordinates_file(vibe, spaces, vibe_header):
             stop = int(line[y])
             start, stop = reverse_and_zero_based(start, stop)
             prophage_dict.setdefault(name, []).append((frag, start, stop))
-            prophage_lengths[frag] = get_len(start,stop) # stop-start+1 # Python zero-based
+            prophage_lengths[frag] = get_len(start,stop) 
             prophage_dict_frags[frag] = name
         
         genomes_full = set(list(prophage_dict.keys()))
@@ -291,8 +291,8 @@ def get_lengths(fasta, spaces, genomes_full):
     lengths = {}
     if spaces:
         for name,seq in fasta_parse(fasta):
+            name = name.replace(" ", "~!!~")
             if name in genomes_full:
-                name = name.replace(" ", "~!!~")
                 lengths[name] = len(seq)
     else:
         for name,seq in fasta_parse(fasta):
@@ -413,7 +413,7 @@ def cohenD(phage_mean, phage_sd, host_mean, host_sd):
         pool = ((phage_sd**2+host_sd**2)/2)**0.5
         d = abs((host_mean-phage_mean)/pool)
     except Exception:
-        # host has 0 coverage because length is < 1000
+        # host has 0 coverage
         d = 0
     return d
 
@@ -448,6 +448,7 @@ def write_coverages(outfile, prophage_covs, host, avg, med, sd, length, effect, 
             active,total,diff,ratio = activity(phage_mean,cov_depth,avg,d,effect,ratio_cutoff,min_breadth,min_cov,total)
             if spaces:
                 key = key.replace("~!!~", " ")
+                host = host.replace("~!!~", " ")
             output.write(f'{key}\t{host}\t{active}\t{d}\t{ratio}\t{diff}\t{l}\t{phage_mean}\t{phage_med}\t{phage_sd}\t{cov_depth}\t{length}\t{avg}\t{med}\t{sd}\n')
             written.append(key)
     return written, total
@@ -459,9 +460,10 @@ def include_zeros(outfile, prophage_lengths, written, prophage_dict_frags, lengt
     written = set(written)
     with open(outfile, 'a') as output:
         for key,host in prophage_dict_frags.items():
-            if spaces:
-                key = key.replace("~!!~", " ")
-            if key in written: continue
             l = prophage_lengths[key]
             length = lengths[host]
-            output.write(f'{key}\t{host}\tno\tNA\tNA\tNA\t{l}\tNA\tNA\tNA\tNA\t{length}\tNA\tNA\tNA\n')
+            if spaces:
+                key = key.replace("~!!~", " ")
+                host = host.replace("~!!~", " ")
+            if key in written: continue
+            output.write(f'{key}\t{host}\tnot present\tNA\tNA\tNA\t{l}\tNA\tNA\tNA\tNA\t{length}\tNA\tNA\tNA\n')
