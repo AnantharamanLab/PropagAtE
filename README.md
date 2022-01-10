@@ -197,7 +197,7 @@ PropagAtE will always generate two files: the results tab-separated spreadsheet 
 * Results file: The results spreadsheet contains the finalize active versus dormant results as well as all relevant metrics and statistics. The following are column names and explanations of the results file:
   1. prophage: the name of the prophage
   2. host: the name of the host
-  3. active: "active" indicates and active prophage in the lytic stage of infection. "dormant" indicates a dormant prophage in the lysogenic stage of infection. "ambiguous" indicates the prophage passed the `-e` and `-c` cutoffs but not the `--min` or `--breadth` cutoffs, generally considering it as "not active" but lacking evidence to call it "dormant". 
+  3. active: "active" indicates and active prophage in the lytic stage of infection. "dormant" indicates a dormant prophage in the lysogenic stage of infection. "ambiguous" indicates the prophage passed the `-e` and `-c` cutoffs but not the `--min` or `--breadth` cutoffs, generally considering it as "not active" but lacking evidence to call it "dormant". "not present" indicates the prophage had no coverage.   
   4. CohenD: the Cohen's *d* effect size for the prophage and host coverages
   5. prophage-host_ratio: the prophage:host coverage ratio (prophage mean divided by host mean)
   6. mean_difference: the difference between the prophage and host coverages (prophage mean minus host mean)
