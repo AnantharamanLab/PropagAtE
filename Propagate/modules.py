@@ -140,19 +140,26 @@ def bowtie2_build(fasta, base, outpath, spaces, u):
                     fasta_out.write(f">{name}\n{seq}\n")
             fasta = f"{outpath}{base}.{u}.fasta"
 
-        subprocess.run(f"bowtie2-build {fasta} {outpath}{base}.bowtie2.index > /dev/null 2> /dev/null", shell=True)
+        index_base = f"{outpath}{base}.bowtie2.index"
+        with open(os.devnull, 'w') as devnull:
+            subprocess.run(["bowtie2-build", fasta, index_base], stdout=devnull, stderr=devnull)
         build = True
-    
     return build
 
 def run_bowtie2_paired(base, outpath, threads, forward, reverse):
-    subprocess.run(f"bowtie2 -x {outpath}{base}.bowtie2.index -1 {forward} -2 {reverse} -S {outpath}{base}.sam -q -p {threads} --no-unal --no-discordant > /dev/null 2> /dev/null", shell=True)
+    cmd = ["bowtie2", "-x", f"{outpath}{base}.bowtie2.index", "-1", forward, "-2", reverse, "-S", f"{outpath}{base}.sam", "-q", "-p", str(threads), "--no-unal", "--no-discordant"]
+    with open(os.devnull, 'w') as devnull:
+        subprocess.run(cmd, stdout=devnull, stderr=devnull)
 
 def run_bowtie2_interleaved(base, outpath, threads, interleaved):
-    subprocess.run(f"bowtie2 -x {outpath}{base}.bowtie2.index --interleaved {interleaved} -S {outpath}{base}.sam -q -p {threads} --no-unal --no-discordant > /dev/null 2> /dev/null", shell=True)
+    cmd = ["bowtie2", "-x", f"{outpath}{base}.bowtie2.index", "--interleaved", interleaved, "-S", f"{outpath}{base}.sam", "-q", "-p", str(threads), "--no-unal", "--no-discordant"]
+    with open(os.devnull, 'w') as devnull:
+        subprocess.run(cmd, stdout=devnull, stderr=devnull)    
 
 def run_bowtie2_unpaired(base, outpath, threads, unpaired):
-    subprocess.run(f"bowtie2 -x {outpath}{base}.bowtie2.index -U {unpaired} -S {outpath}{base}.sam -q -p {threads} --no-unal > /dev/null 2> /dev/null", shell=True)
+    cmd = ["bowtie2", "-x", f"{outpath}{base}.bowtie2.index", "-U", unpaired, "-S", f"{outpath}{base}.sam", "-q", "-p", str(threads), "--no-unal"]
+    with open(os.devnull, 'w') as devnull:
+        subprocess.run(cmd, stdout=devnull, stderr=devnull)
 
 def post_bowtie2(outpath, base, clean, u, build, threads):
     '''
@@ -160,7 +167,11 @@ def post_bowtie2(outpath, base, clean, u, build, threads):
     '''
     sam = f'{outpath}{base}.sam'
     bam = f'{outpath}{base}.bam'
-    subprocess.run(f"samtools view -@ {threads} -h -b {sam} > {bam} 2> /dev/null", shell=True)
+    with open(bam, 'wb') as bam_out, open(os.devnull, 'w') as devnull:
+        subprocess.run(
+            ["samtools", "view", "-@", str(threads), "-h", "-b", sam],
+            stdout=bam_out, stderr=devnull
+        )
     
     if clean:
         subprocess.run(f"rm {outpath}{base}.bowtie2.index.* 2> /dev/null", shell=True)
@@ -181,8 +192,11 @@ def sam_bam(sam, outpath, threads):
         base = sam.rsplit(".",1)[0]
 
     bam = f'{outpath}{base}.bam'
-    subprocess.run(f"samtools view -@ {threads} -h -b {sam} > {bam} 2> /dev/null", shell=True)
-
+    with open(bam, 'wb') as bam_out, open(os.devnull, 'w') as devnull:
+        subprocess.run(
+            ["samtools", "view", "-@", str(threads), "-h", "-b", sam],
+            stdout=bam_out, stderr=devnull
+        )
     return bam
 
 
@@ -192,8 +206,11 @@ def sort_bam(bam, outpath, threads, clean, clean_bam):
     '''
     if int(os.stat(bam).st_size) == 0:
         return False, None
+    p1 = subprocess.Popen(["samtools", "view", "-@", str(threads), bam], stdout=subprocess.PIPE)
+    p2 = subprocess.Popen(["head", "-n", "1"], stdin=p1.stdout, stdout=subprocess.PIPE)
+    p1.stdout.close()
+    check_aligned = p2.communicate()[0]
     # check if anything aligned
-    check_aligned = subprocess.check_output(f"samtools view -@ {threads} {bam} | head -n 1", shell=True)
     if len(check_aligned) == 0:
         return False, None
     
@@ -206,15 +223,21 @@ def sort_bam(bam, outpath, threads, clean, clean_bam):
     sort_check = False
     if clean_bam: # only need to check if bamfile was the input
         try:
-            check = subprocess.check_output(f"samtools view -@ {threads} -H {bam} | grep '@HD'", shell=True)
+            p1 = subprocess.Popen(["samtools", "view", "-@", str(threads), "-H", bam], stdout=subprocess.PIPE)
+            p2 = subprocess.Popen(["grep", "@HD"], stdin=p1.stdout, stdout=subprocess.PIPE)
+            p1.stdout.close()
+            check = p2.communicate()[0]
             if "coordinate" in str(check):
                 sort_check = True
         except Exception:
             # no @HD line, retain sort_check = False
             pass
     if not sort_check:
-        subprocess.run(f"samtools sort -@ {threads} -o {outpath}{base}.sorted.bam {bam} 2> /dev/null", shell=True)
-
+        with open(os.devnull, 'w') as devnull:
+            subprocess.run(
+                ["samtools", "sort", "-@", str(threads), "-o", f"{outpath}{base}.sorted.bam", bam],
+                stderr=devnull
+            )
         if clean and not clean_bam:
             subprocess.run(f'rm {bam}', shell=True)
 
@@ -314,7 +337,7 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
 
     bai = False
     if not os.path.exists(bam + '.bai'):
-        subprocess.run(f'samtools index {bam}', shell=True)
+        subprocess.run(["samtools", "index", bam])
         bai = True
     
     if mask != 0:
@@ -398,7 +421,7 @@ def extract_coverage(bam, read_id, lengths, mask, outfile, prophage_dict, effect
 
     bamfile.close()
     if clean and bai:
-        subprocess.run(f'rm {bam}.bai', shell=True)
+        os.remove(f"{bam}.bai")
 
     include_zeros(outfile, prophage_lengths, written, prophage_dict_frags, lengths, spaces)
 
